@@ -2,17 +2,43 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { login, otpVerify } from './service/allApi';
+
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = () => {
-    if (agreed) {
-      console.log('Sign up:', { email, password });
+  const handleSubmit = async () => {
+    if (!agreed) return;
+
+    // Clear previous errors
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await login({ email, password });
+
+      // Check if the response indicates success
+      if (response.success === false) {
+        setError(response.message || 'Signup failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Store email for verification on the next page
+      localStorage.setItem('verificationEmail', email);
+
+      // Redirect to email-recovery
       router.push('/email-recovery');
+
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -85,14 +111,20 @@ export default function SignUpPage() {
             </label>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Sign Up Button */}
           <button
             onClick={handleSubmit}
-            
-            disabled={!agreed}
+            disabled={!agreed || loading}
             className="w-full py-4 bg-lime-400 text-black font-bold text-lg rounded-full hover:bg-lime-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6"
           >
-            Sign Up
+            {loading ? 'Sending OTP...' : 'Sign Up'}
           </button>
 
           {/* Hero Image */}
@@ -105,14 +137,14 @@ export default function SignUpPage() {
                     #IMMUNITY
                   </div>
                 </div>
-                
+
                 {/* Center Image - Featured */}
                 <div className="bg-blue-600 rounded-lg flex items-end justify-center overflow-hidden relative border-2 border-dashed border-white">
                   <div className="absolute bottom-0 left-0 right-0 bg-lime-400 text-black font-bold text-xs p-2 text-center">
                     #IMMUNITY TO...
                   </div>
                 </div>
-                
+
                 {/* Right Image */}
                 <div className="bg-cyan-600 rounded-lg flex items-end justify-center overflow-hidden relative">
                   <div className="absolute bottom-0 left-0 right-0 bg-lime-400 text-black font-bold text-xs p-2 text-center">
