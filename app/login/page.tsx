@@ -31,7 +31,7 @@ export default function LoginPage() {
             const response = await swiftLogin({ email, password });
 
             if (response && response.success !== false) {
-                console.log('Login successful:', response);
+                // console.log('Login successful:', response);
                 // Store token if available
                 if (response.token || (response.data && response.data.token)) {
                     const token = response.token || response.data.token;
@@ -49,7 +49,7 @@ export default function LoginPage() {
                 setToast({ message: response?.message || 'Login failed. Please check your credentials.', type: 'error' });
             }
         } catch (err) {
-            console.error('Login error:', err);
+            // console.error('Login error:', err);
             setToast({ message: 'An unexpected error occurred. Please try again.', type: 'error' });
         } finally {
             setLoading(false);
