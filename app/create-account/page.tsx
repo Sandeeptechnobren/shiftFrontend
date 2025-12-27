@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { createAccount, getCountryList } from '../service/allApi';
 import { useRouter } from 'next/navigation';
+import Toast from '../components/Toast';
 
 interface Country {
   name: string;
@@ -18,7 +19,7 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countries, setCountries] = useState<Country[]>([]);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   // Modal dropdown states
   const [openModal, setOpenModal] = useState<'gender' | 'age_range' | 'country' | null>(null);
@@ -48,24 +49,19 @@ export default function SignUpForm() {
     fetchCountries();
   }, []);
 
-  // Simple toast effect
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
+  // No longer need the local toast effect since the Toast component handles its own timeout
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.agreeToTerms) {
-      setMessage({ text: "Please agree to the terms and conditions.", type: 'error' });
+      setToast({ message: "Please agree to the terms and conditions.", type: 'error' });
       return;
     }
 
     setLoading(true);
-    setMessage(null);
+    setToast(null);
 
     try {
       // Get email from localStorage which was set in the first signup step
@@ -84,18 +80,18 @@ export default function SignUpForm() {
 
       if (response && response.success !== false) {
         console.log('Account created successfully:', response);
-        setMessage({ text: 'Account created successfully!', type: 'success' });
+        setToast({ message: 'Account created successfully! Redirecting...', type: 'success' });
 
         // Clear form or redirect
         setTimeout(() => {
           router.push('/login'); // Redirect to login after successful signup
         }, 2000);
       } else {
-        setMessage({ text: response?.message || 'Failed to create account', type: 'error' });
+        setToast({ message: response?.message || 'Failed to create account', type: 'error' });
       }
     } catch (error) {
       console.error('Error creating account:', error);
-      setMessage({ text: 'An unexpected error occurred.', type: 'error' });
+      setToast({ message: 'An unexpected error occurred.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -336,20 +332,12 @@ export default function SignUpForm() {
       </div>
 
       {/* Custom Toast Message */}
-      {message && (
-        <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl shadow-2xl text-white font-bold transition-all z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 ${message.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-          }`}>
-          {message.type === 'success' ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          )}
-          {message.text}
-        </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       {/* Modal Dropdowns */}

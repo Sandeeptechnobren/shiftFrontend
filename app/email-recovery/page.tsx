@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { otpVerify } from '../service/allApi';
+import Toast from '../components/Toast';
 
 export default function VerifyEmailPage() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [email, setEmail] = useState('');
   const router = useRouter();
@@ -43,14 +44,14 @@ export default function VerifyEmailPage() {
   }, [otp]);
 
   const handleVerify = async (otpCode: string) => {
-    setError('');
+    setToast(null);
     setLoading(true);
 
     try {
       const response = await otpVerify({ email, otp: otpCode });
 
       if (response.success === false) {
-        setError(response.message || 'Verification failed. Please check the code.');
+        setToast({ message: response.message || 'Verification failed. Please check the code.', type: 'error' });
         setLoading(false);
         return;
       }
@@ -65,7 +66,7 @@ export default function VerifyEmailPage() {
         localStorage.setItem('authToken', response.token);
       }
     } catch (err) {
-      setError('An error occurred during verification.');
+      setToast({ message: 'An error occurred during verification.', type: 'error' });
       setLoading(false);
     }
   };
@@ -119,7 +120,7 @@ export default function VerifyEmailPage() {
   const handleResend = () => {
     if (timeLeft <= 0) {
       setTimeLeft(30);
-      setError('');
+      setToast({ message: 'A new OTP has been sent to your email.', type: 'success' });
       console.log('Resending OTP to:', email);
       // You might want to call the signup/resend API here
     }
@@ -208,21 +209,13 @@ export default function VerifyEmailPage() {
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   disabled={loading}
-                  className={`w-14 h-20 text-center text-3xl font-black border-2 rounded-2xl focus:border-lime-400 focus:ring-4 focus:ring-lime-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 bg-red-50 text-red-600' : 'border-gray-200 bg-gray-50/30'
+                  className={`w-14 h-20 text-center text-3xl font-black border-2 rounded-2xl focus:border-lime-400 focus:ring-4 focus:ring-lime-100 focus:outline-none transition-all duration-300 ${toast?.type === 'error' ? 'border-red-500 bg-red-50 text-red-600' : 'border-gray-200 bg-gray-50/30'
                     }`}
                 />
               ))}
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-4 rounded-xl mb-6 border border-red-100 animate-in slide-in-from-top-2">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm font-semibold">{error}</p>
-              </div>
-            )}
+
 
             {/* Loading Message */}
             {loading && (
@@ -254,6 +247,14 @@ export default function VerifyEmailPage() {
           </div>
         )}
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

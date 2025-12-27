@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { login, otpVerify } from './service/allApi';
+import Toast from './components/Toast';
 // import {signup1}
 
 export default function SignUpPage() {
@@ -11,14 +12,14 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const router = useRouter();
 
   const handleSubmit = async () => {
     if (!agreed) return;
 
-    // Clear previous errors
-    setError('');
+    // Clear previous toasts
+    setToast(null);
     setLoading(true);
 
     try {
@@ -26,7 +27,7 @@ export default function SignUpPage() {
 
       // Check if the response indicates success
       if (response.success === false) {
-        setError(response.message || 'Signup failed. Please try again.');
+        setToast({ message: response.message || 'Signup failed. Please try again.', type: 'error' });
         setLoading(false);
         return;
       }
@@ -38,11 +39,16 @@ export default function SignUpPage() {
       }
       localStorage.setItem('verificationEmail', email);
 
-      // Redirect to email-recovery
-      router.push('/email-recovery');
+      // Show success message
+      setToast({ message: 'OTP sent successfully! Redirecting...', type: 'success' });
+
+      // Redirect to email-recovery after short delay
+      setTimeout(() => {
+        router.push('/email-recovery');
+      }, 1500);
 
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setToast({ message: 'An unexpected error occurred. Please try again.', type: 'error' });
       setLoading(false);
     }
   };
@@ -118,12 +124,7 @@ export default function SignUpPage() {
               </label>
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-sm text-red-600 font-medium">{error}</p>
-              </div>
-            )}
+
 
             {/* Sign Up Button */}
             <button
@@ -188,6 +189,15 @@ export default function SignUpPage() {
           </div>
         </div>
       </div>
-    </div>
+      {
+        toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )
+      }
+    </div >
   );
 }
