@@ -39,3 +39,43 @@ export const createPayment = async (payload: {
         return handleError(error);
     }
 };
+
+export const createAccount = async (payload: {
+    email?: string;
+    username: string;
+    gender: string;
+    age_range: string;
+    country_code: string;
+    password: string;
+}) => {
+    try {
+        const res = await API.post("/api/profile", payload);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getCountryList = async (params?: any) => {
+    try {
+        const res = await API.get(`/api/countries`,
+            { params }
+        );
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const swiftLogin = async (credentials: {
+    email?: string;
+    username?: string;
+    password: string;
+}) => {
+    try {
+        const res = await API.post("/api/signin", credentials);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
