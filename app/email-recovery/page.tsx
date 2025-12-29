@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { otpVerify } from '../service/allApi';
+import Toast from '../components/Toast';
 
 export default function VerifyEmailPage() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [email, setEmail] = useState('');
   const router = useRouter();
@@ -43,14 +44,14 @@ export default function VerifyEmailPage() {
   }, [otp]);
 
   const handleVerify = async (otpCode: string) => {
-    setError('');
+    setToast(null);
     setLoading(true);
 
     try {
       const response = await otpVerify({ email, otp: otpCode });
 
       if (response.success === false) {
-        setError(response.message || 'Verification failed. Please check the code.');
+        setToast({ message: response.message || 'Verification failed. Please check the code.', type: 'error' });
         setLoading(false);
         return;
       }
@@ -65,7 +66,7 @@ export default function VerifyEmailPage() {
         localStorage.setItem('authToken', response.token);
       }
     } catch (err) {
-      setError('An error occurred during verification.');
+      setToast({ message: 'An error occurred during verification.', type: 'error' });
       setLoading(false);
     }
   };
@@ -119,7 +120,7 @@ export default function VerifyEmailPage() {
   const handleResend = () => {
     if (timeLeft <= 0) {
       setTimeLeft(30);
-      setError('');
+      setToast({ message: 'A new OTP has been sent to your email.', type: 'success' });
       console.log('Resending OTP to:', email);
       // You might want to call the signup/resend API here
     }
@@ -132,93 +133,127 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
-      {isVerified ? (
-        // Success Screen
-        <div className="w-full max-w-md text-center">
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="bg-lime-400 p-6 rounded-full inline-block animate-bounce">
-                <svg
-                  className="w-16 h-16 text-black"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
+      {/* Side Panel - Desktop Only */}
+      <div className="hidden lg:flex lg:w-1/3 bg-gray-900 flex-col justify-center items-center p-12 text-center text-white border-r-4 border-lime-400">
+        <div className="max-w-xs">
+          <h2 className="text-4xl font-black italic tracking-tighter mb-6 text-lime-400">SECURITY FIRST</h2>
+          <p className="text-gray-400 uppercase tracking-widest text-xs font-bold leading-relaxed">
+            We take your account security seriously. Please verify your email to continue.
+          </p>
+          <div className="mt-12 p-8 bg-white/5 backdrop-blur-sm rounded-3xl border border-white/10">
+            <div className="w-16 h-1 bg-lime-400 mx-auto mb-6"></div>
+            <p className="text-sm italic text-gray-300">"Verification is the bridge to a seamless shift experience."</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        {isVerified ? (
+          // Success Screen
+          <div className="w-full max-w-md text-center animate-in fade-in zoom-in duration-500">
+            <div className="flex justify-center mb-10">
+              <div className="relative">
+                <div className="absolute inset-0 bg-lime-400 rounded-full blur-2xl opacity-20 animate-pulse"></div>
+                <div className="bg-lime-400 p-8 rounded-full inline-block relative border-4 border-black/5">
+                  <svg
+                    className="w-20 h-20 text-black"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
               </div>
             </div>
+            <h2 className="text-4xl font-black mb-4 uppercase tracking-tight italic">Verified!</h2>
+            <p className="text-gray-500 font-medium mb-2">Setting up your workplace dashboard...</p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-lime-400 rounded-full text-xs font-bold uppercase tracking-widest mt-4">
+              <span className="w-2 h-2 bg-lime-400 rounded-full animate-ping"></span>
+              Redirecting in {countdown}s
+            </div>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Verified Successfully!</h2>
-          <p className="text-gray-600">Redirecting in {countdown}...</p>
-        </div>
-      ) : (
-        // OTP Verification Screen
-        <div className="w-full max-w-md text-center">
-          {/* Header */}
-          <h1 className="text-2xl font-black tracking-tight uppercase mb-8">
-            Verify Your Email
-          </h1>
+        ) : (
+          // OTP Verification Screen
+          <div className="w-full max-w-md">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-3xl font-black tracking-tight uppercase italic mb-4">
+                Verify Your Email
+              </h1>
+              <div className="flex flex-col items-center gap-2 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                <p className="text-gray-500 text-sm font-medium">
+                  We have sent an OTP code to
+                </p>
+                <div className="px-4 py-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+                  <p className="text-gray-900 font-bold tracking-tight">
+                    {email}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          {/* Message */}
-          <p className="text-gray-700 mb-8">
-            We have sent an OTP Verification to
-          </p>
+            {/* OTP Input Boxes */}
+            <div className="flex justify-center gap-4 mb-8">
+              {[0, 1, 2, 3].map((index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="text"
+                  maxLength={1}
+                  value={otp[index]}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  disabled={loading}
+                  className={`w-14 h-20 text-center text-3xl font-black border-2 rounded-2xl focus:border-lime-400 focus:ring-4 focus:ring-lime-100 focus:outline-none transition-all duration-300 ${toast?.type === 'error' ? 'border-red-500 bg-red-50 text-red-600' : 'border-gray-200 bg-gray-50/30'
+                    }`}
+                />
+              ))}
+            </div>
 
-          {/* OTP Input Boxes */}
-          <div className="flex justify-center gap-2 mb-4">
-            {[0, 1, 2, 3].map((index) => (
-              <input
-                key={index}
-                id={`otp-${index}`}
-                type="text"
-                maxLength={1}
-                value={otp[index]}
-                onChange={(e) => handleOtpChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                disabled={loading}
-                className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg focus:border-lime-400 focus:outline-none transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-200'
+
+
+            {/* Loading Message */}
+            {loading && (
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="w-5 h-5 border-4 border-lime-400 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">Verifying Code...</p>
+              </div>
+            )}
+
+            {/* Resend Link */}
+            <div className="flex flex-col items-center gap-4 mt-8 pt-8 border-t border-gray-100">
+              <p className="text-gray-400 text-sm">Didn&apos;t receive a code?</p>
+              <button
+                onClick={handleResend}
+                disabled={timeLeft > 0 || loading}
+                className={`group flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 ${timeLeft > 0
+                  ? 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-100'
+                  : 'bg-gray-900 text-white hover:bg-black shadow-xl hover:shadow-gray-200 active:scale-[0.98]'
                   }`}
-              />
-            ))}
+              >
+                <span className="text-sm font-black uppercase tracking-widest">
+                  Resend OTP
+                </span>
+                <span className={`w-12 h-12 flex items-center justify-center rounded-xl font-black text-lg ${timeLeft > 0 ? 'bg-gray-200 text-gray-500' : 'bg-lime-400 text-black group-hover:bg-lime-300'}`}>
+                  {formatTime(timeLeft)}
+                </span>
+              </button>
+            </div>
           </div>
+        )}
+      </div>
 
-          {/* Error Message */}
-          {error && (
-            <p className="text-red-500 text-sm mb-4">{error}</p>
-          )}
-
-          {/* Loading Message */}
-          {loading && (
-            <p className="text-gray-500 text-sm mb-4">Verifying...</p>
-          )}
-
-          {/* Email */}
-          <p className="text-black font-semibold mb-12">
-            {email}
-          </p>
-
-          {/* Resend Link */}
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={handleResend}
-              disabled={timeLeft > 0 || loading}
-              className={`text-sm ${timeLeft > 0
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-black font-medium hover:underline cursor-pointer'
-                }`}
-            >
-              Didn&apos;t receive a code?
-            </button>
-            <span className="text-black font-bold">
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-        </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
