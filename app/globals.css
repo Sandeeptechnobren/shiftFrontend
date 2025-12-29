@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@font-face {
+  font-family: "Built Titling";
+  src: url("/fonts/BuiltTitling-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}

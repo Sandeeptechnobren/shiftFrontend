@@ -183,7 +183,7 @@ export default function SignUpForm() {
             <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
               Complete Your Profile
             </h1>
-            <p className="text-gray-500 mb-10">Help us personalize your experience</p>
+              <p className="text-gray-500 mb-4">Help us personalize your experience</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
