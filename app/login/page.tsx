@@ -55,24 +55,12 @@ export default function LoginPage() {
 
     return (
         <>
-            {/* <div className="absolute top-1/2 -translate-y-1/2 left-2 p-4 bg-white text-black border border-gray-300 rounded-xl mb-4 max-w-xs z-40">This is the first onboarding step, where we take only the email and password of the user.</div> */}
             <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-                {/* Header - Fixed to top on mobile, spans left column on desktop or full top */}
-                {/* <header className="bg-gray-900 text-white py-4 px-6 fixed top-0 left-0 right-0 z-50 lg:w-1/2 lg:right-auto">
-                    <div className="max-w-md mx-auto">
-                        <h1 className="text-2xl font-bold">LOGO</h1>
-                    </div>
-                </header> */}
-
-                {/* Content Area */}
                 <div className="flex flex-col flex-1 lg:flex-row min-h-screenlg:pt-0">
-                    {/* Form Section */}
                     <main className="flex-1 flex flex-col justify-center items-center py-8 lg:py-0 bg-white">
                         <div className="max-w-md mx-auto w-full px-6">
                             <h2 className="text-4xl font-black mb-8 uppercase text-gray-900">Log into your account</h2>
-
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* Email Field */}
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2 font-semibold">
                                         Email
@@ -88,7 +76,6 @@ export default function LoginPage() {
                                     />
                                 </div>
 
-                                {/* Password Field */}
                                 <div>
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2 font-semibold">
                                         Password
