@@ -56,8 +56,8 @@ export default function LoginPage() {
     return (
         <>
             <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-                <div className="flex flex-col flex-1 lg:flex-row min-h-screenlg:pt-0">
-                    <main className="flex-1 flex flex-col justify-center items-center py-8 lg:py-0 bg-white">
+                <div className="flex flex-col flex-1 lg:flex-row min-h-screen lg:pt-0">
+                    <main className="flex-1 flex flex-col justify-center items-center py-8 lg:py-0 bg-white lg:w-1/2">
                         <div className="max-w-md mx-auto w-full px-6">
                             <h2 className="text-4xl font-black mb-8 uppercase text-gray-900">Log into your account</h2>
                             <form onSubmit={handleSubmit} className="space-y-6">
@@ -144,7 +144,7 @@ export default function LoginPage() {
                     </main>
 
                     {/* Image Section */}
-                    <div className="relative w-full h-[370px] lg:h-screen overflow-hidden bg-white">
+                    <div className="relative w-full h-[370px] lg:h-screen lg:w-1/2 overflow-hidden bg-white">
                         <Image
                             src="/signup5.png"
                             alt="Login Banner"
