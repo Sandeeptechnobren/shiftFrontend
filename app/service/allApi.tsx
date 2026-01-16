@@ -79,3 +79,16 @@ export const swiftLogin = async (credentials: {
         return handleError(error);
     }
 };
+
+export const addNewMessage = async (payload: {
+    targetId: number;
+    spaceId: number;
+    message: string;
+}) => {
+    try {
+        const res = await API.post("/api/messages", payload);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};

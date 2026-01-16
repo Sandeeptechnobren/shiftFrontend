@@ -108,7 +108,7 @@ export default function SignUpForm() {
     isOpen: boolean;
     onClose: () => void;
     title: string;
-    options: { label: string; value: string }[];
+    options: { label: string; value: string; flag?: string }[];
     onSelect: (value: string) => void;
   }) => {
     if (!isOpen) return null;
@@ -138,8 +138,13 @@ export default function SignUpForm() {
                   onSelect(option.value);
                   onClose();
                 }}
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold text-left px-6 py-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold text-left px-6 py-4 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-3"
               >
+                {option.flag && (
+                  (option.flag.startsWith('http') || option.flag.startsWith('/')) ?
+                    <img src={option.flag} alt="" className="w-6 h-4 object-cover rounded-sm" />
+                    : <span className="text-xl">{option.flag}</span>
+                )}
                 {option.label}
               </button>
             ))}
@@ -183,7 +188,7 @@ export default function SignUpForm() {
             <h1 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
               Complete Your Profile
             </h1>
-              <p className="text-gray-500 mb-4">Help us personalize your experience</p>
+            <p className="text-gray-500 mb-4">Help us personalize your experience</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -256,10 +261,28 @@ export default function SignUpForm() {
                     onClick={() => setOpenModal('country')}
                     className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all bg-gray-50/50 text-left flex items-center justify-between group"
                   >
-                    <span className={formData.country_code ? "text-gray-900 font-medium" : "text-gray-500"}>
-                      {formData.country_code ?
-                        countries.find(c => c.code === formData.country_code)?.name || formData.country_code
-                        : 'Select Country'}
+                    <span className="flex items-center gap-3">
+                      {formData.country_code ? (
+                        (() => {
+                          const country = countries.find(c => c.code === formData.country_code);
+                          if (!country) return <span className="text-gray-900 font-medium">{formData.country_code}</span>;
+                          const isUrl = country.flag?.startsWith('http') || country.flag?.startsWith('/');
+                          return (
+                            <>
+                              {country.flag && (
+                                isUrl ?
+                                  <img src={country.flag} alt={country.name} className="w-6 h-4 object-cover rounded-sm" />
+                                  : <span className="text-xl">{country.flag}</span>
+                              )}
+                              <span className="text-gray-900 font-medium">
+                                {country.name} ({country.code})
+                              </span>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-gray-500">Select Country</span>
+                      )}
                     </span>
                     <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -374,7 +397,8 @@ export default function SignUpForm() {
         title="COUNTRY"
         options={countries.map(country => ({
           label: `${country.name} (${country.code})`,
-          value: country.code
+          value: country.code,
+          flag: country.flag
         }))}
         onSelect={(value) => setFormData(prev => ({ ...prev, country_code: value }))}
       />

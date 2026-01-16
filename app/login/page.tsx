@@ -152,6 +152,16 @@ export default function LoginPage() {
                             className="object-cover"
                             priority
                         />
+
+                        {/* Hero Text Overlay - Desktop Only */}
+                        <div className="hidden lg:flex absolute inset-0 bg-black/40 flex-col items-center justify-center text-center px-8">
+                            <h1 className="text-6xl xl:text-7xl font-black text-white mb-4 uppercase tracking-tight leading-tight">
+                                THE FUTURE IS<br />HERE
+                            </h1>
+                            <p className="text-xl xl:text-2xl font-bold text-lime-400 uppercase tracking-wider">
+                                JOIN THE SHIFT REVOLUTION TODAY
+                            </p>
+                        </div>
                     </div>
                 </div>
 
