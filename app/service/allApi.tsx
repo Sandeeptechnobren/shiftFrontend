@@ -21,6 +21,7 @@ export const otpVerify = async (payload: {
 }) => {
     try {
         const res = await API.post("/api/signup/verify-email", payload);
+        console.log('[API] /api/signup/verify-email response:', res.data);
         return res.data;
     } catch (error: unknown) {
         return handleError(error);
@@ -47,10 +48,34 @@ export const createAccount = async (payload: {
     age_range: string;
     country_code: string;
     password: string;
+    photo?: File;
 }) => {
     try {
-        const res = await API.post("/api/profile", payload);
+        const formData = new FormData();
+        if (payload.email) formData.append("email", payload.email);
+        formData.append("username", payload.username);
+        formData.append("gender", payload.gender);
+        formData.append("age_range", payload.age_range);
+        formData.append("country_code", payload.country_code);
+        formData.append("password", payload.password);
+        if (payload.photo) {
+            console.log('[API] Appending photo to FormData:', payload.photo.name, payload.photo.type, payload.photo.size);
+            formData.append("image", payload.photo);
+        }
+
+        // Log all FormData keys for debugging
+        const keys: string[] = [];
+        formData.forEach((_, key) => keys.push(key));
+        console.log('[API] FormData keys:', keys);
+
+        const res = await API.post("/api/profile", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        console.log('[API] /api/profile response:', res.data);
         return res.data;
+
     } catch (error: unknown) {
         return handleError(error);
     }

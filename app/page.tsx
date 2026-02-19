@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { login } from './service/allApi';
+import { login, getCountryList } from './service/allApi';
+import { extractToken } from './service/APIutils';
 import Toast from './components/Toast';
 import { Loader2 } from 'lucide-react';
 
@@ -39,8 +40,8 @@ export default function SignUpPage() {
             }
 
             // Store token and email for verification on the next page
-            if (response.token || (response.data && response.data.token)) {
-                const token = response.token || response.data.token;
+            const token = extractToken(response);
+            if (token) {
                 localStorage.setItem('authToken', token);
             }
             localStorage.setItem('verificationEmail', email);

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { swiftLogin } from '../service/allApi';
+import { extractToken } from '../service/APIutils';
 // import { login, swiftLogin } from '../service/allApi';
 import { Loader2 } from 'lucide-react';
 import Toast from '../components/Toast';
@@ -30,8 +31,8 @@ export default function LoginPage() {
             const response = await swiftLogin({ email, password });
 
             if (response && response.success !== false) {
-                if (response.token || (response.data && response.data.token)) {
-                    const token = response.token || response.data.token;
+                const token = extractToken(response);
+                if (token) {
                     localStorage.setItem('authToken', token);
                 }
 
