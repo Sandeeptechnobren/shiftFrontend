@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { otpVerify } from '../service/allApi';
+import { extractToken } from '../service/APIutils';
 import Toast from '../components/Toast';
 
 export default function VerifyEmailPage() {
@@ -60,10 +61,11 @@ export default function VerifyEmailPage() {
       setIsVerified(true);
       setCountdown(3);
       setLoading(false);
+      // Store token if provided - Use robust extraction
+      const authToken = extractToken(response);
 
-      // Store token if provided
-      if (response.token) {
-        localStorage.setItem('authToken', response.token);
+      if (authToken) {
+        localStorage.setItem('authToken', authToken);
       }
     } catch (err) {
       setToast({ message: 'An error occurred during verification.', type: 'error' });
@@ -121,7 +123,7 @@ export default function VerifyEmailPage() {
     if (timeLeft <= 0) {
       setTimeLeft(30);
       setToast({ message: 'A new OTP has been sent to your email.', type: 'success' });
-      console.log('Resending OTP to:', email);
+      // console.log('Resending OTP to:', email);
       // You might want to call the signup/resend API here
     }
   };

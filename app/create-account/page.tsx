@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Camera } from 'lucide-react';
 import { createAccount, getCountryList } from '../service/allApi';
+import { extractToken } from '../service/APIutils';
 import { useRouter } from 'next/navigation';
 import Toast from '../components/Toast';
 
@@ -21,11 +22,16 @@ export default function SignUpForm() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  // Photo states
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
   // Modal dropdown states
   const [openModal, setOpenModal] = useState<'gender' | 'age_range' | 'country' | null>(null);
 
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     gender: '',
     age_range: '',
     country_code: '',
@@ -43,17 +49,16 @@ export default function SignUpForm() {
           setCountries(response);
         }
       } catch (error) {
-        console.error('Error fetching countries:', error);
       }
     };
     fetchCountries();
   }, []);
 
-  // No longer need the local toast effect since the Toast component handles its own timeout
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
 
     if (!formData.agreeToTerms) {
       setToast({ message: "Please agree to the terms and conditions.", type: 'error' });
@@ -68,23 +73,27 @@ export default function SignUpForm() {
       const email = typeof window !== 'undefined' ? localStorage.getItem('verificationEmail') : '';
 
       const payload = {
-        email: email || '', // Including email as it might be required for /api/profile
+        email: formData.email, // Using email from formData
         username: formData.username,
         gender: formData.gender,
         age_range: formData.age_range,
         country_code: formData.country_code,
         password: formData.password,
+        photo: photo || undefined,
       };
 
       const response = await createAccount(payload);
 
       if (response && response.success !== false) {
-        console.log('Account created successfully:', response);
-        setToast({ message: 'Account created successfully! Redirecting...', type: 'success' });
+        // Just in case the profile API returns a new token
+        const token = extractToken(response);
+        if (token) {
+          localStorage.setItem('authToken', token);
+        }
 
-        // Clear form or redirect
+        setToast({ message: 'Account created successfully! Redirecting...', type: 'success' });
         setTimeout(() => {
-          router.push('/login'); // Redirect to login after successful signup
+          router.push('/login');
         }, 2000);
       } else {
         setToast({ message: response?.message || 'Failed to create account', type: 'error' });
@@ -162,6 +171,16 @@ export default function SignUpForm() {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhoto(file);
+      // Create a local preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Brand Panel - Visible only on desktop */}
@@ -191,6 +210,32 @@ export default function SignUpForm() {
             <p className="text-gray-500 mb-4">Help us personalize your experience</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Photo Upload Section */}
+              <div className="flex flex-col items-center mb-8">
+                <div className="relative group">
+                  <div className="w-28 h-28 rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden group-hover:border-lime-400 transition-colors">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Profile preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-gray-400 flex flex-col items-center">
+                        <Camera size={32} />
+                        <span className="text-[10px] font-bold mt-2 uppercase tracking-widest text-gray-400">Add Photo</span>
+                      </div>
+                    )}
+                  </div>
+                  <label htmlFor="photo-upload" className="absolute -bottom-2 -right-2 bg-lime-400 text-gray-900 p-2.5 rounded-2xl cursor-pointer hover:bg-lime-500 transition-all shadow-xl hover:scale-110 active:scale-95 border-4 border-white">
+                    <Camera size={18} />
+                    <input
+                      type="file"
+                      id="photo-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Username */}
                 <div className="md:col-span-2">
@@ -203,6 +248,23 @@ export default function SignUpForm() {
                     name="username"
                     placeholder="e.g. shiftmaster"
                     value={formData.username}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all bg-gray-50/50"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="md:col-span-2">
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="e.g. master@shiftproject.com"
+                    value={formData.email}
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all bg-gray-50/50"
