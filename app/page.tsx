@@ -139,6 +139,19 @@ export default function SignUpPage() {
                                 {loading && <Loader2 className="animate-spin" size={24} />}
                                 {loading ? 'Sending OTP...' : 'Sign Up'}
                             </button>
+
+                            <div className="text-center mt-4">
+                                <p className="text-gray-600">
+                                    Already have an account?{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/login')}
+                                        className="text-lime-600 font-bold hover:underline"
+                                    >
+                                        Sign In
+                                    </button>
+                                </p>
+                            </div>
                         </form>
                     </div>
                 </main>

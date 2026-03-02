@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Bell, Plus, Calendar, User } from 'lucide-react';
 
 const WalkingManIcon = () => (
@@ -69,6 +71,7 @@ const WalkingManIcon = () => (
 
 export default function ShiftApp() {
     const [activeTab, setActiveTab] = useState('home');
+    const router = useRouter();
 
     const friends = [
         { id: 1, name: 'Active Jeri', steps: 12000, time: 'now', avatar: '🏃', position: 1 },
@@ -139,10 +142,15 @@ export default function ShiftApp() {
             <aside className="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 h-screen sticky top-0">
                 <div className="p-6">
                     <div className="flex items-center gap-2 mb-10">
-                        <div className="w-8 h-8 bg-lime-400 flex items-center justify-center font-bold text-black text-xl transform -skew-x-12">
-                            N
+                        <div className="relative w-8 h-8">
+                            <Image
+                                src="/logo.png"
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                            />
                         </div>
-                        <span className="text-2xl font-bold">SHIFT</span>
+                        <span className="text-2xl font-bold uppercase tracking-tighter">SHIFT</span>
                     </div>
 
                     <nav className="space-y-4">
@@ -150,7 +158,7 @@ export default function ShiftApp() {
                             <span className="text-xl">🏃</span>
                             <span>Walk</span>
                         </button>
-                        <button className="flex items-center gap-4 w-full p-3 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
+                        {/* <button className="flex items-center gap-4 w-full p-3 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
                             <span className="text-xl">👥</span>
                             <span>Community</span>
                         </button>
@@ -165,7 +173,7 @@ export default function ShiftApp() {
                         <button className="flex items-center gap-4 w-full p-3 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
                             <User className="w-6 h-6" />
                             <span>Space</span>
-                        </button>
+                        </button> */}
                     </nav>
                 </div>
 
@@ -187,10 +195,15 @@ export default function ShiftApp() {
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 pt-6">
                         <div className="flex items-center gap-2 md:hidden">
-                            <div className="w-8 h-8 bg-lime-400 flex items-center justify-center font-bold text-black text-xl transform -skew-x-12">
-                                N
+                            <div className="relative w-8 h-8">
+                                <Image
+                                    src="/logo.png"
+                                    alt="Logo"
+                                    fill
+                                    className="object-contain"
+                                />
                             </div>
-                            <span className="text-2xl font-bold">SHIFT</span>
+                            <span className="text-2xl font-bold uppercase tracking-tighter">SHIFT</span>
                         </div>
                         <div className="hidden md:block">
                             <h1 className="text-3xl font-black italic tracking-tight">DASHBOARD</h1>
@@ -223,7 +236,10 @@ export default function ShiftApp() {
                                     Home
                                 </button>
                                 <button
-                                    onClick={() => setActiveTab('groups')}
+                                    onClick={() => {
+                                        setActiveTab('groups');
+                                        router.push('/payment');
+                                    }}
                                     className={`px-8 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'groups'
                                         ? 'bg-white text-black shadow-lg shadow-white/5'
                                         : 'text-gray-500 hover:text-gray-300 whitespace-nowrap'

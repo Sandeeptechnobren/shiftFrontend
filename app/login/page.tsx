@@ -140,6 +140,19 @@ export default function LoginPage() {
                                     {loading && <Loader2 className="animate-spin" size={24} />}
                                     {loading ? 'Logging in...' : 'Login'}
                                 </button>
+
+                                <div className="text-center mt-4">
+                                    <p className="text-gray-600">
+                                        Don't have an account?{' '}
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push('/')}
+                                            className="text-lime-600 font-bold hover:underline"
+                                        >
+                                            Sign Up
+                                        </button>
+                                    </p>
+                                </div>
                             </form>
                         </div>
                     </main>
