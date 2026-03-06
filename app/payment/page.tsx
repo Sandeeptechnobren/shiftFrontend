@@ -130,6 +130,14 @@ export default function PremiumClubCard() {
             </div>
           </button>
 
+          {/* Skip Button */}
+          <button
+            onClick={() => router.push("/create-account")}
+            className="w-full mt-4 text-gray-500 hover:text-gray-700 font-semibold py-2 transition-colors duration-200 underline text-sm"
+          >
+            Skip for now, go to Create Account
+          </button>
+
           <p className="text-center text-xs text-gray-500 mt-3">
             70% discount applies for up to 6 months
           </p>
