@@ -158,6 +158,12 @@ export default function ShiftApp() {
                             <span className="text-xl">🏃</span>
                             <span>Walk</span>
                         </button>
+                        <button
+                            onClick={() => router.push('/admin')}
+                            className="flex items-center gap-4 w-full p-3 rounded-2xl bg-lime-400 text-black font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <span className="text-xl">🏃</span>
+                            <span>Admin panel</span>
+                        </button>
                         {/* <button className="flex items-center gap-4 w-full p-3 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
                             <span className="text-xl">👥</span>
                             <span>Community</span>
