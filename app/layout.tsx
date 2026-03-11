@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     icon: "/logo.png",
   },
 };
-
+// this is is rooot function this is cannot this is fine which is the good that us fine good
 export default function RootLayout({
   children,
 }: Readonly<{
