@@ -95,6 +95,7 @@ export const getCountryList = async (params?: any) => {
 export const swiftLogin = async (credentials: {
     email?: string;
     username?: string;
+    role?: string;
     password: string;
 }) => {
     try {

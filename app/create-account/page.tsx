@@ -186,7 +186,6 @@ export default function SignUpForm() {
       {/* Brand Panel - Visible only on desktop */}
       <div className="hidden lg:flex lg:w-1/3 bg-gray-900 flex-col justify-between p-12 text-white relative overflow-hidden">
         <div className="z-10">
-          <h2 className="text-3xl font-black italic tracking-tighter mb-4 text-lime-400">SHIFT PROJECT</h2>
           <p className="text-gray-400 text-lg max-w-xs">Complete your profile to unlock all features of our shift management platform.</p>
         </div>
 

@@ -29,6 +29,26 @@ export const extractToken = (response: any): string | null => {
     return null;
 };
 
+// Role extraction helper
+export const extractRole = (response: any): string | null => {
+    if (!response) return null;
+
+    const role =
+        response.role ||
+        response.user?.role ||
+        response.data?.role ||
+        response.data?.user?.role ||
+        response.data?.data?.role;
+
+    if (role && typeof role === 'string') {
+        const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+        console.log(`[API] Extracted role: ${role} -> Normalized to: ${normalizedRole}`);
+        return normalizedRole;
+    }
+
+    return null;
+};
+
 // Request interceptor to add authorization tokens
 API.interceptors.request.use(
     (config) => {
