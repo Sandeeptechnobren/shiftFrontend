@@ -3,13 +3,18 @@ import axios, { AxiosError } from "axios";
 // Create an Axios instance with a configurable base URL
 export const API = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.easycoders.in/projects/shift_backend/public",
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+    }
 });
 
-// Token extraction helper to handle various response structures
+/**
+ * Token extraction helper to handle various response structures from different endpoints.
+ */
 export const extractToken = (response: any): string | null => {
     if (!response) return null;
 
-    // Check various common paths for the token
     const token =
         response.token ||
         response.data?.token ||
@@ -19,17 +24,16 @@ export const extractToken = (response: any): string | null => {
         response.user?.token ||
         response.data?.user?.token;
 
-    // Validate that the token is a meaningful string
     if (token && typeof token === 'string' && token !== 'undefined' && token !== 'null') {
-        console.log('[API] Extracted token successfully');
         return token;
     }
 
-    console.warn('[API] No valid token found in response:', response);
     return null;
 };
 
-// Role extraction helper
+/**
+ * Role extraction helper to normalize user roles (e.g., "admin" -> "Admin").
+ */
 export const extractRole = (response: any): string | null => {
     if (!response) return null;
 
@@ -41,69 +45,75 @@ export const extractRole = (response: any): string | null => {
         response.data?.data?.role;
 
     if (role && typeof role === 'string') {
-        const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-        console.log(`[API] Extracted role: ${role} -> Normalized to: ${normalizedRole}`);
-        return normalizedRole;
+        return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
     }
 
     return null;
 };
 
-// Request interceptor to add authorization tokens
+// --- Request Interceptor ---
+// Safely adds the Authorization header if a token exists in localStorage (client-side only).
 API.interceptors.request.use(
     (config) => {
-        const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+        if (typeof window !== "undefined") {
+            const token = localStorage.getItem("authToken") || localStorage.getItem("token");
 
-        if (token && token !== 'undefined' && token !== 'null') {
-            config.headers.set('Authorization', `Bearer ${token}`);
-            console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url} - Token applied: ${token.substring(0, 10)}...`);
-        } else {
-            console.warn(`[API Request] ${config.method?.toUpperCase()} ${config.url} - No valid token found in localStorage`);
+            if (token && token !== 'undefined' && token !== 'null') {
+                const cleanToken = token.trim();
+                // Ensure proper 'Bearer ' prefixing
+                const finalToken = cleanToken.toLowerCase().startsWith('bearer ') 
+                    ? `Bearer ${cleanToken.substring(7).trim()}` 
+                    : `Bearer ${cleanToken}`;
+                
+                // Use .set() if available (Axios 1.x), else direct assignment
+                if (config.headers && typeof config.headers.set === 'function') {
+                    config.headers.set('Authorization', finalToken);
+                } else {
+                    config.headers['Authorization'] = finalToken;
+                }
+            }
         }
-
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling common responses
+// --- Response Interceptor ---
+// Handles 401 Unauthorized errors by clearing tokens and optionally redirecting.
 API.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     (error) => {
-        // Handle 401 Unauthorized
-        if (error.response?.status === 401) {
-            console.error('[API Response] 401 Unauthorized Error:', {
-                url: error.config?.url,
-                method: error.config?.method,
-                data: error.response?.data
-            });
-
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+            console.error('[API] 401 Unauthorized - token might be invalid or expired.');
+            
             if (typeof window !== "undefined") {
-                const currentToken = localStorage.getItem("authToken");
-                console.log('[API] 401 error with token:', currentToken ? `${currentToken.substring(0, 10)}...` : 'null');
-
-                // DEACTIVATING for now: localStorage.removeItem("authToken");
-                // We keep it to avoid breaking the registration flow if a secondary request fails.
+                // Clear authentication data
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("userRole");
+                
+                // Optional: Redirect to login if not already there
+                if (!window.location.pathname.includes('/login')) {
+                    // window.location.href = '/login'; 
+                }
             }
         }
         return Promise.reject(error);
     }
 );
 
-// Error handler utility
+/**
+ * Global error handler utility to normalize error responses.
+ */
 export const handleError = (error: unknown) => {
     if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+        const axiosError = error as AxiosError<{ message?: string; error?: string; data?: any }>;
 
-        // If there's a response from the server
         if (axiosError.response) {
+            const apiData = axiosError.response.data;
             const errorMessage =
-                axiosError.response.data?.message ||
-                axiosError.response.data?.error ||
+                apiData?.message ||
+                apiData?.error ||
+                (typeof apiData === 'string' ? apiData : null) ||
                 axiosError.message ||
                 "An error occurred";
 
@@ -111,21 +121,19 @@ export const handleError = (error: unknown) => {
                 success: false,
                 message: errorMessage,
                 status: axiosError.response.status,
-                data: axiosError.response.data,
+                data: apiData,
             };
         }
 
-        // If there's no response (network error, timeout, etc.)
         if (axiosError.request) {
             return {
                 success: false,
-                message: "Network error. Please check your connection.",
+                message: "No response from server. Please check your connection.",
                 status: 0,
             };
         }
     }
 
-    // For non-Axios errors
     return {
         success: false,
         message: error instanceof Error ? error.message : "An unexpected error occurred",

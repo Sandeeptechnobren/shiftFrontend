@@ -118,3 +118,39 @@ export const addNewMessage = async (payload: {
         return handleError(error);
     }
 };
+
+export const getAdminDashboard = async () => {
+    try {
+        const res = await API.get("/api/admin/dashboard");
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getAllUsers = async () => {
+    try {
+        const res = await API.get("/api/admin/users?type=all");
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getUserDetails = async (id: number | string) => {
+    try {
+        const res = await API.get(`/api/admin/users/${id}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getAllGroups = async () => {
+    try {
+        const res = await API.get("/api/admin/groups");
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
