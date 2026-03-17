@@ -1,0 +1,165 @@
+                                </div>
+                                <div className="space-y-12">
+                                    {/* Stats Grid */}
+                                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                        <span>User Activity</span>
+                                        <span className="text-lime-400">& Logs</span>
+                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                                    </h3>
+
+                                    {isLoadingDetails ? (
+                                        <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                            <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                                            <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving user ledger...</p>
+                                        </div>
+                                    ) : selectedUserDetails ? (
+                                        <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                                                {/* Today Steps */}
+                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Clock size={48} /></div>
+                                                    <div className="relative z-10">
+                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Clock size={12} /> Today's Steps</div>
+                                                        <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.today_steps || 0}</div>
+                                                        <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Daily Target: 10,000</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Verification Status */}
+                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Shield size={48} /></div>
+                                                    <div className="relative z-10">
+                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Shield size={12} /> Verification Status</div>
+                                                        <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.user_detail.email_verification_status ? 'Verified' : 'Unverified'}</div>
+                                                        <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Auth Level 1</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Role */}
+                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-orange-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 text-orange-400"><Mail size={48} /></div>
+                                                    <div className="relative z-10">
+                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Mail size={12} /> User Role</div>
+                                                        <div className="text-2xl font-black italic tracking-tighter text-white uppercase">{selectedUserDetails.user_detail.role}</div>
+                                                        <div className="text-[10px] bg-orange-400/10 px-2 py-1 rounded mt-3 w-fit text-orange-400 font-bold border border-orange-400/20">System Access</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                                {/* Groups Section */}
+                                                <div className="space-y-6">
+                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                        <Users size={14} className="text-lime-400" /> Group Memberships
+                                                    </h4>
+                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                                        {selectedUserDetails.groups && selectedUserDetails.groups.length > 0 ? (
+                                                            <div className="divide-y divide-white/5">
+                                                                {selectedUserDetails.groups.map((g: any) => (
+                                                                    <div key={g.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 rounded-lg bg-lime-400/10 flex items-center justify-center text-lime-400 font-black italic">
+                                                                                #{g.group_id}
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-sm font-bold text-white">Group {g.group_id}</div>
+                                                                                <div className="text-[10px] text-gray-500">{g.is_admin ? 'Group Admin' : 'Member'}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-[10px] text-gray-600 italic">
+                                                                            Joined {new Date(g.created_at).toLocaleDateString()}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No groups assigned.</div>
+                                                        )}
+                                                    </div>
+
+                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                                        <Activity size={14} className="text-blue-400" /> Walk History
+                                                    </h4>
+                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5 max-h-[250px] overflow-y-auto">
+                                                        {selectedUserDetails.walk_history && selectedUserDetails.walk_history.length > 0 ? (
+                                                            <div className="divide-y divide-white/5">
+                                                                {selectedUserDetails.walk_history.map((h: any, i: number) => (
+                                                                    <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                        <div className="text-sm font-bold text-gray-300">{new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="text-lg font-black italic tracking-tight text-lime-400">{h.total_steps}</div>
+                                                                            <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Steps</div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No steps recorded.</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Payments Section */}
+                                                <div className="space-y-6">
+                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                        <CreditCard size={14} className="text-amber-400" /> Payment Ledger
+                                                    </h4>
+                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                                        {selectedUserDetails.payment_history && selectedUserDetails.payment_history.length > 0 ? (
+                                                            <div className="divide-y divide-white/5">
+                                                                {selectedUserDetails.payment_history.map((p: any) => (
+                                                                    <div key={p.id} className="p-5 hover:bg-white/5 transition-colors">
+                                                                        <div className="flex justify-between items-start mb-2">
+                                                                            <div className="text-sm font-black italic tracking-tight text-white">{p.amount} {p.currency}</div>
+                                                                            <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${p.status === 'success' ? 'bg-lime-400/10 border-lime-400/20 text-lime-400' : 'bg-red-400/10 border-red-400/20 text-red-400'}`}>
+                                                                                {p.status}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex justify-between items-end">
+                                                                            <div>
+                                                                                <div className="text-[10px] text-gray-600 font-mono">ID: {p.stripe_session_id.substring(0, 15)}...</div>
+                                                                                <div className="text-[10px] text-gray-500 mt-1">Expiry: {new Date(p.expire_date).toLocaleDateString()}</div>
+                                                                            </div>
+                                                                            <div className="text-[10px] text-gray-600 italic">
+                                                                                {new Date(p.created_at).toLocaleDateString()}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No payment history.</div>
+                                                        )}
+                                                    </div>
+
+                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                                        <FileText size={14} className="text-purple-400" /> Community Posts
+                                                    </h4>
+                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                                        {selectedUserDetails.posts && selectedUserDetails.posts.length > 0 ? (
+                                                            <div className="p-6 grid grid-cols-4 gap-4">
+                                                                {selectedUserDetails.posts.map((post: any) => (
+                                                                    <div key={post.id} className="aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-600 hover:border-purple-400/30 hover:text-purple-400 transition-all cursor-default">
+                                                                        #{post.post_id}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No community posts yet.</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="p-20 text-center text-gray-600 text-xs font-bold italic">Select a user to view their records.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+        </div>
+    );
+}

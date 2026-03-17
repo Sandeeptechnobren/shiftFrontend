@@ -71,7 +71,20 @@ const WalkingManIcon = () => (
 
 export default function ShiftApp() {
     const [activeTab, setActiveTab] = useState('home');
+    const [userRole, setUserRole] = useState<string | null>(null);
     const router = useRouter();
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const role = localStorage.getItem('userRole');
+            setUserRole(role);
+
+            // If user is Admin, they should only see the Admin Panel
+            if (role === 'Admin') {
+                router.push('/admin');
+            }
+        }
+    }, [router]);
 
     const friends = [
         { id: 1, name: 'Active Jeri', steps: 12000, time: 'now', avatar: '🏃', position: 1 },
@@ -150,7 +163,6 @@ export default function ShiftApp() {
                                 className="object-contain"
                             />
                         </div>
-                        <span className="text-2xl font-bold uppercase tracking-tighter">SHIFT</span>
                     </div>
 
                     <nav className="space-y-4">
@@ -158,12 +170,14 @@ export default function ShiftApp() {
                             <span className="text-xl">🏃</span>
                             <span>Walk</span>
                         </button>
-                        <button
-                            onClick={() => router.push('/admin')}
-                            className="flex items-center gap-4 w-full p-3 rounded-2xl bg-lime-400 text-black font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">
-                            <span className="text-xl">🏃</span>
-                            <span>Admin panel</span>
-                        </button>
+                        {userRole === 'Admin' && (
+                            <button
+                                onClick={() => router.push('/admin')}
+                                className="flex items-center gap-4 w-full p-3 rounded-2xl bg-lime-400 text-black font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                <span className="text-xl">🏃</span>
+                                <span>Admin panel</span>
+                            </button>
+                        )}
                         {/* <button className="flex items-center gap-4 w-full p-3 rounded-2xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
                             <span className="text-xl">👥</span>
                             <span>Community</span>
@@ -209,7 +223,6 @@ export default function ShiftApp() {
                                     className="object-contain"
                                 />
                             </div>
-                            <span className="text-2xl font-bold uppercase tracking-tighter">SHIFT</span>
                         </div>
                         <div className="hidden md:block">
                             <h1 className="text-3xl font-black italic tracking-tight">DASHBOARD</h1>

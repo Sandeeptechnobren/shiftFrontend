@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { swiftLogin } from '../service/allApi';
-import { extractToken } from '../service/APIutils';
+import { extractToken, extractRole } from '../service/APIutils';
 // import { login, swiftLogin } from '../service/allApi';
 import { Loader2 } from 'lucide-react';
 import Toast from '../components/Toast';
@@ -28,20 +28,42 @@ export default function LoginPage() {
 
         setLoading(true);
         try {
-            const response = await swiftLogin({ email, password });
+            // Determine role to pass to backend based on email heuristic
+            const intendedRole = email.toLowerCase().includes('admin') ? 'Admin' : 'User';
+            console.log(`[Login] Attempting login with role: ${intendedRole}`);
+
+            const response = await swiftLogin({ email, password, role: intendedRole });
 
             if (response && response.success !== false) {
+                console.log('[Login] API Response:', response);
                 const token = extractToken(response);
                 if (token) {
                     localStorage.setItem('authToken', token);
                 }
 
+                // Extract and store user role
+                let userRole = extractRole(response);
+
+                // Fallback: If no role is found but email contains 'admin', treat as Admin for testing
+                if (!userRole && email.toLowerCase().includes('admin')) {
+                    console.warn('[Login] No role found, but email contains "admin". Falling back to Admin.');
+                    userRole = 'Admin';
+                }
+
+                userRole = userRole || 'User';
+                console.log(`[Login] Setting userRole in localStorage: ${userRole}`);
+                localStorage.setItem('userRole', userRole);
+
                 // Show success message
                 setToast({ message: 'Login successful! Redirecting...', type: 'success' });
 
-                // Redirect to dashboard after short delay
+                // Redirect based on role after short delay
                 setTimeout(() => {
-                    router.push('/dashboard');
+                    if (userRole === 'Admin') {
+                        router.push('/admin');
+                    } else {
+                        router.push('/dashboard');
+                    }
                 }, 1500);
             } else {
                 setToast({ message: response?.message || 'Login failed. Please check your credentials.', type: 'error' });
