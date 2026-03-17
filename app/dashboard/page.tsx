@@ -155,7 +155,7 @@ export default function ShiftApp() {
             <aside className="hidden md:flex flex-col w-64 bg-gray-900 border-r border-gray-800 h-screen sticky top-0">
                 <div className="p-6">
                     <div className="flex items-center gap-2 mb-10">
-                        <div className="relative w-8 h-8">
+                        <div className="relative w-40 h-20">
                             <Image
                                 src="/logo.png"
                                 alt="Logo"
@@ -257,7 +257,7 @@ export default function ShiftApp() {
                                 <button
                                     onClick={() => {
                                         setActiveTab('groups');
-                                        router.push('/payment');
+                                        router.push('/payment?from=dashboard');
                                     }}
                                     className={`px-8 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'groups'
                                         ? 'bg-white text-black shadow-lg shadow-white/5'

@@ -154,3 +154,31 @@ export const getAllGroups = async () => {
         return handleError(error);
     }
 };
+
+export const getGroupMembers = async (groupId: number | string) => {
+    try {
+        const res = await API.get(`/api/admin/groups/${groupId}/members`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getAllPosts = async () => {
+    try {
+        const res = await API.get("/api/admin/posts");
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const deletePost = async (postId: number | string) => {
+    try {
+        const res = await API.delete(`/api/admin/posts/${postId}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
