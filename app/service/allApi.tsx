@@ -181,3 +181,4 @@ export const deletePost = async (postId: number | string) => {
         return handleError(error);
     }
 };
+

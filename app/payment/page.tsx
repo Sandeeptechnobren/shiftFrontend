@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPayment } from "../service/allApi";
 
-export default function PremiumClubCard() {
+function PremiumClubCardInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromDashboard = searchParams.get("from") === "dashboard";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -130,12 +132,18 @@ export default function PremiumClubCard() {
             </div>
           </button>
 
-          {/* Skip Button */}
+          {/* Skip Button — context-aware */}
           <button
-            onClick={() => router.push("/create-account")}
+            onClick={() =>
+              fromDashboard
+                ? router.push("/dashboard")
+                : router.push("/create-account")
+            }
             className="w-full mt-4 text-gray-500 hover:text-gray-700 font-semibold py-2 transition-colors duration-200 underline text-sm"
           >
-            Skip for now, go to Create Account
+            {fromDashboard
+              ? "Skip for now, go to Dashboard"
+              : "Skip for now, go to Create Account"}
           </button>
 
           <p className="text-center text-xs text-gray-500 mt-3">
@@ -153,3 +161,12 @@ export default function PremiumClubCard() {
     </div>
   );
 }
+
+export default function PremiumClubCard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>}>
+      <PremiumClubCardInner />
+    </Suspense>
+  );
+}
+

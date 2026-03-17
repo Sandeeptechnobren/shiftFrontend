@@ -24,7 +24,7 @@ import {
     Trash2,
     TrendingUp
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, } from '../service/allApi';
 
 // --- Mock Data ---
 
@@ -86,7 +86,6 @@ export default function AdminPanel() {
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -172,9 +171,9 @@ export default function AdminPanel() {
             try {
                 const res = await getGroupMembers(selectedGroup.id);
                 if (res && res.success !== false) {
-                    const rawMembers = Array.isArray(res.members) ? res.members : 
-                                    Array.isArray(res.data) ? res.data : 
-                                    Array.isArray(res) ? res : [];
+                    const rawMembers = Array.isArray(res.members) ? res.members :
+                        Array.isArray(res.data) ? res.data :
+                            Array.isArray(res) ? res : [];
                     setGroupMembers(rawMembers);
                 }
             } catch (err) {
@@ -194,9 +193,12 @@ export default function AdminPanel() {
             setIsLoadingPosts(true);
             try {
                 const res = await getAllPosts();
-                if (res && res.status === true) {
-                    setPosts(res.posts || []);
-                }
+                console.log('[Posts] API Response:', res);
+                const rawPosts = Array.isArray(res?.posts) ? res.posts
+                    : Array.isArray(res?.data) ? res.data
+                        : Array.isArray(res) ? res
+                            : [];
+                setPosts(rawPosts);
             } catch (err) {
                 console.error('Error fetching posts:', err);
             } finally {
@@ -211,9 +213,21 @@ export default function AdminPanel() {
         setPostToDelete(postId);
     };
 
+    // const handleStatusChange = async (user: any, newStatus: 0 | 1) => {
+    //     // Optimistically update UI
+    //     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: newStatus, is_active: newStatus === 1 } : u));
+    //     try {
+    //         await updateUserStatus(user.id, newStatus);
+    //     } catch (err) {
+    //         console.error('Failed to update user status:', err);
+    //         // Revert on failure
+    //         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u));
+    //     }
+    // };
+
     const confirmDelete = async () => {
         if (!postToDelete) return;
-        
+
         setIsDeletingPost(postToDelete);
         try {
             const res = await deletePost(postToDelete);
@@ -248,24 +262,24 @@ export default function AdminPanel() {
 
     const resolveImageUrl = (path: string) => {
         if (!path) return null;
-        
+
         // Fix double storage in full URLs returned by backend
         if (path.startsWith('http')) {
             return path.replace('/storage/storage/', '/storage/');
         }
-        
+
         const baseUrl = 'https://api.easycoders.in/projects/shift_backend/public';
-        
+
         let finalPath = path.startsWith('/') ? path.slice(1) : path;
-        
+
         // Fix double storage if provided in relative path
         finalPath = finalPath.replace(/^storage\/storage\//, 'storage/');
-        
+
         // Ensure path starts with storage/ if it looks like a relative storage path
         if (!finalPath.startsWith('storage/')) {
             finalPath = `storage/${finalPath}`;
         }
-        
+
         return `${baseUrl}/${finalPath}`;
     };
 
@@ -323,38 +337,38 @@ export default function AdminPanel() {
 
             {/* Sidebar */}
             <aside className="hidden md:flex flex-col w-72 h-full glass border-r border-white/5 p-8 gap-10 shrink-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 relative">
+                <div className="flex items-center">
+                    <div className="w-40 h-24 relative">
                         <Image src="/logo.png" alt="Logo" fill className="object-contain" />
                     </div>
-                    <span className="font-black italic text-xl tracking-tight">SHIFT<span className="text-lime-400">ADMIN</span></span>
                 </div>
 
                 <nav className="flex flex-col gap-3 flex-1">
                     {/* <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 ml-2">Console</p> */}
                     <button
-                        onClick={() => setView('users')}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
-                    >
-                        <Users size={20} className={view === 'users' ? 'text-black' : ''} />
-                        <span>Users</span>
-                    </button>
-                    <button
-                        onClick={() => setView('admin')}
+                        onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
                     >
                         <Shield size={20} className={view === 'admin' ? 'text-black' : ''} />
                         <span>Admin</span>
                     </button>
                     <button
-                        onClick={() => setView('groups')}
+                        onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); }}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                    >
+                        <Users size={20} className={view === 'users' ? 'text-black' : ''} />
+                        <span>Users</span>
+                    </button>
+
+                    <button
+                        onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'groups' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
                     >
                         <Layers size={20} className={view === 'groups' ? 'text-black' : ''} />
                         <span>Groups</span>
                     </button>
                     <button
-                        onClick={() => setView('posts')}
+                        onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'posts' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
                     >
                         <ImageIcon size={20} className={view === 'posts' ? 'text-black' : ''} />
@@ -376,7 +390,7 @@ export default function AdminPanel() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Header */}
-                <header className="p-6 md:p-8 flex items-center justify-between border-b border-white/5 glass z-10 shrink-0">
+                <header className="px-6 pt-6 pb-4 md:px-8 md:pt-6 md:pb-4 flex items-center justify-between border-b border-white/5 glass z-10 shrink-0">
                     <div className="flex items-center gap-4 md:hidden">
                         <button onClick={() => router.push('/dashboard')} className="p-2 glass rounded-xl">
                             <ArrowLeft size={20} />
@@ -386,11 +400,11 @@ export default function AdminPanel() {
                         <h1 className="text-3xl font-black italic tracking-tighter uppercase">
                             {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : 'Content Moderation'}
                         </h1>
-                        <p className="text-gray-500 text-sm mt-1">
-                            {view === 'users' ? 'Monitor, manage and moderate user activities.' : 
-                             view === 'admin' ? 'System-wide administrative overview.' : 
-                             view === 'groups' ? 'Orchestrate and oversee all active communities.' :
-                             'Review and manage user-generated posts across the platform.'}
+                        <p className="text-gray-500 text-sm">
+                            {view === 'users' ? 'Monitor, manage and moderate user activities.' :
+                                view === 'admin' ? 'System-wide administrative overview.' :
+                                    view === 'groups' ? 'Orchestrate and oversee all active communities.' :
+                                        'Review and manage user-generated posts across the platform.'}
                         </p>
                     </div>
 
@@ -501,14 +515,14 @@ export default function AdminPanel() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {groups.map((group, idx) => (
-                                    <div 
-                                        key={group.id} 
+                                    <div
+                                        key={group.id}
                                         onClick={() => setSelectedGroup(group)}
                                         className="glass-card rounded-[2.5rem] p-6 relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in cursor-pointer"
                                         style={{ animationDelay: `${idx * 0.1}s` }}
                                     >
                                         <div className="absolute top-0 right-0 p-10 bg-lime-400/5 rounded-bl-[5rem] translate-x-4 -translate-y-4 group-hover:bg-lime-400/10 transition-all duration-500"></div>
-                                        
+
                                         <div className="relative z-10">
                                             <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-lime-400/50 transition-all duration-500 shadow-2xl mb-6">
                                                 {group.image ? (
@@ -520,7 +534,7 @@ export default function AdminPanel() {
 
                                             <h3 className="text-xl font-black italic tracking-tight text-white mb-2 group-hover:text-lime-400 transition-colors uppercase truncate">{group.name}</h3>
                                             <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed mb-6 h-8 italic">"{group.description || 'No description provided.'}"</p>
-                                            
+
                                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex -space-x-1.5">
@@ -614,11 +628,18 @@ export default function AdminPanel() {
                                                             {user.role}
                                                         </div>
                                                     </td>
-                                                    <td className="p-6">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.5)]' : 'bg-gray-600'}`}></div>
-                                                            <span className="text-sm font-bold text-gray-300">{user.is_active ? 'Active' : 'Inactive'}</span>
-                                                        </div>
+                                                    <td className="p-6" onClick={e => e.stopPropagation()}>
+                                                        <select
+                                                            value={(user.account_is_active === 1 || user.account_is_active === true || user.is_active) ? '1' : '0'}
+                                                            // onChange={(e) => (user, parseInt(e.target.value) as 0 | 1)}
+                                                            className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer outline-none transition-all ${(user.account_is_active === 1 || user.account_is_active === true || user.is_active)
+                                                                ? 'bg-lime-400/10 border-lime-400/30 text-lime-400'
+                                                                : 'bg-gray-800/60 border-white/10 text-gray-400'
+                                                                } [&>option]:bg-gray-900 [&>option]:text-white`}
+                                                        >
+                                                            <option value="1">Active</option>
+                                                            <option value="0">Inactive</option>
+                                                        </select>
                                                     </td>
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-2">
@@ -655,7 +676,7 @@ export default function AdminPanel() {
                         </div>
                     ) : view === 'posts' ? (
                         <div className="max-w-7xl mx-auto animate-slide-up">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div>
                                     <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">Community Content</h2>
                                     <p className="text-gray-500 text-sm mt-1">{posts.length} posts actively monitored.</p>
@@ -664,9 +685,12 @@ export default function AdminPanel() {
                                     /* Force refresh */
                                     setIsLoadingPosts(true);
                                     getAllPosts().then(res => {
-                                        if (res && res.status === true) {
-                                            setPosts(res.posts || []);
-                                        }
+                                        console.log('[Posts Refresh] API Response:', res);
+                                        const rawPosts = Array.isArray(res?.posts) ? res.posts
+                                            : Array.isArray(res?.data) ? res.data
+                                                : Array.isArray(res) ? res
+                                                    : [];
+                                        setPosts(rawPosts);
                                         setIsLoadingPosts(false);
                                     });
                                 }}>
@@ -683,8 +707,8 @@ export default function AdminPanel() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {filteredPosts.map((post, idx) => (
-                                        <div 
-                                            key={post.post_id} 
+                                        <div
+                                            key={post.post_id}
                                             className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
                                             style={{ animationDelay: `${idx * 0.05}s` }}
                                         >
@@ -695,9 +719,9 @@ export default function AdminPanel() {
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
                                                 )}
-                                                
+
                                                 {/* Delete Overlay Button */}
-                                                <button 
+                                                <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleDeletePost(post.post_id);
@@ -818,190 +842,190 @@ export default function AdminPanel() {
                                             Joined {new Date(selectedUser.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-12">
-                                    {/* Stats Grid */}
-                                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                        <span>User Activity</span>
-                                        <span className="text-lime-400">& Logs</span>
-                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
-                                    </h3>
-
-                                    {isLoadingDetails ? (
-                                        <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                            <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                            <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving user ledger...</p>
-                                        </div>
-                                    ) : selectedUserDetails ? (
-                                        <>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                                                {/* Today Steps */}
-                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Clock size={48} /></div>
-                                                    <div className="relative z-10">
-                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Clock size={12} /> Today's Steps</div>
-                                                        <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.today_steps || 0}</div>
-                                                        <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Daily Target: 10,000</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Verification Status */}
-                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Shield size={48} /></div>
-                                                    <div className="relative z-10">
-                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Shield size={12} /> Verification Status</div>
-                                                        <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.user_detail.email_verification_status ? 'Verified' : 'Unverified'}</div>
-                                                        <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Auth Level 1</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Role */}
-                                                <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-orange-400/30 hover:bg-white/[0.04] transition-all shadow-lg hover:-translate-y-1">
-                                                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 text-orange-400"><Mail size={48} /></div>
-                                                    <div className="relative z-10">
-                                                        <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Mail size={12} /> User Role</div>
-                                                        <div className="text-2xl font-black italic tracking-tighter text-white uppercase">{selectedUserDetails.user_detail.role}</div>
-                                                        <div className="text-[10px] bg-orange-400/10 px-2 py-1 rounded mt-3 w-fit text-orange-400 font-bold border border-orange-400/20">System Access</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                                {/* Groups Section */}
-                                                <div className="space-y-6">
-                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                                        <Users size={14} className="text-lime-400" /> Group Memberships
-                                                    </h4>
-                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5">
-                                                        {selectedUserDetails.groups && selectedUserDetails.groups.length > 0 ? (
-                                                            <div className="divide-y divide-white/5">
-                                                                {selectedUserDetails.groups.map((g: any) => {
-                                                                    const groupInfo = g.group || groups.find(group => group.id === g.group_id || group.id === Number(g.group_id));
-                                                                    return (
-                                                                        <div key={g.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lime-400 font-black italic overflow-hidden">
-                                                                                    {groupInfo?.image ? (
-                                                                                        <img src={resolveImageUrl(groupInfo.image) || ''} alt="" className="w-full h-full object-cover" />
-                                                                                    ) : (
-                                                                                        <span>#{g.group_id}</span>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div>
-                                                                                    <div className="text-sm font-bold text-white">{groupInfo?.name || `Group ${g.group_id}`}</div>
-                                                                                    <div className="text-[10px] text-gray-500">{g.is_admin ? 'Group Admin' : 'Member'}</div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="text-[10px] text-gray-600 italic">
-                                                                                Joined {new Date(g.created_at).toLocaleDateString()}
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No groups assigned.</div>
-                                                        )}
-                                                    </div>
-
-                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
-                                                        <Activity size={14} className="text-blue-400" /> Walk History
-                                                    </h4>
-                                                    <div className="glass rounded-[2rem] overflow-hidden border border-white/5 max-h-[250px] overflow-y-auto">
-                                                        {selectedUserDetails.walk_history && selectedUserDetails.walk_history.length > 0 ? (
-                                                            <div className="divide-y divide-white/5">
-                                                                {selectedUserDetails.walk_history.map((h: any, i: number) => (
-                                                                    <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                                                                        <div className="text-sm font-bold text-gray-300">{new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="text-lg font-black italic tracking-tight text-lime-400">{h.total_steps}</div>
-                                                                            <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Steps</div>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No steps recorded.</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Payments Section */}
-                                                <div className="space-y-6">
-                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                                        <CreditCard size={14} className="text-amber-400" /> Payment Ledger
-                                                    </h4>
-                                                    <div className="glass rounded-4xl overflow-hidden border border-white/5">
-                                                        {selectedUserDetails.payment_history && selectedUserDetails.payment_history.length > 0 ? (
-                                                            <div className="divide-y divide-white/5">
-                                                                {selectedUserDetails.payment_history.map((p: any) => (
-                                                                    <div key={p.id} className="p-5 hover:bg-white/5 transition-colors">
-                                                                        <div className="flex justify-between items-start mb-2">
-                                                                            <div className="text-sm font-black italic tracking-tight text-white">{p.amount} {p.currency}</div>
-                                                                            <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${p.status === 'success' ? 'bg-lime-400/10 border-lime-400/20 text-lime-400' : 'bg-red-400/10 border-red-400/20 text-red-400'}`}>
-                                                                                {p.status}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex justify-between items-end">
-                                                                            <div>
-                                                                                <div className="text-[10px] text-gray-600 font-mono">ID: {p.stripe_session_id.substring(0, 15)}...</div>
-                                                                                <div className="text-[10px] text-gray-500 mt-1">Expiry: {new Date(p.expire_date).toLocaleDateString()}</div>
-                                                                            </div>
-                                                                            <div className="text-[10px] text-gray-600 italic">
-                                                                                {new Date(p.created_at).toLocaleDateString()}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No payment history.</div>
-                                                        )}
-                                                    </div>
-
-                                                    <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
-                                                        <FileText size={14} className="text-purple-400" /> Community Posts
-                                                    </h4>
-                                                    <div className="glass rounded-[2rem] overflow-hidden border border-white/5">
-                                                        {(() => {
-                                                            const userPosts = Array.isArray(selectedUserDetails?.community_post?.posts) 
-                                                                ? selectedUserDetails.community_post.posts 
-                                                                : Array.isArray(selectedUserDetails?.community_post)
-                                                                    ? selectedUserDetails.community_post
-                                                                    : Array.isArray(selectedUserDetails?.posts)
-                                                                        ? selectedUserDetails.posts
-                                                                        : [];
-
-                                                            return userPosts.length > 0 ? (
-                                                                <div className="p-6 grid grid-cols-4 gap-4">
-                                                                    {userPosts.map((post: any) => (
-                                                                        <div key={post.id || post.post_id} className="aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-600 hover:border-purple-400/30 hover:text-purple-400 transition-all cursor-default overflow-hidden group/post relative">
-                                                                            {post.image || post.photo || post.url || post.media_url ? (
-                                                                                <img src={resolveImageUrl(post.image || post.photo || post.url || post.media_url) || ''} alt="" className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
-                                                                            ) : (
-                                                                                <div className="p-2 text-center break-words w-full line-clamp-3">
-                                                                                    {post.content ? `"${post.content}"` : `#${post.post_id || post.id}`}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No community posts yet.</div>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="p-20 text-center text-gray-600 text-xs font-bold italic">Select a user to view their records.</div>
-                                    )}
                                 </div>
                             </div>
+                            <div className="space-y-12">
+                                {/* Stats Grid */}
+                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <span>User Activity</span>
+                                    <span className="text-lime-400">& Logs</span>
+                                    <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                                </h3>
+
+                                {isLoadingDetails ? (
+                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                        <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                                        <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving user ledger...</p>
+                                    </div>
+                                ) : selectedUserDetails ? (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                                            {/* Today Steps */}
+                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Clock size={48} /></div>
+                                                <div className="relative z-10">
+                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Clock size={12} /> Today's Steps</div>
+                                                    <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.today_steps || 0}</div>
+                                                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Daily Target: 10,000</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Verification Status */}
+                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Shield size={48} /></div>
+                                                <div className="relative z-10">
+                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Shield size={12} /> Verification Status</div>
+                                                    <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.user_detail.email_verification_status ? 'Verified' : 'Unverified'}</div>
+                                                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Auth Level 1</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Role */}
+                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-orange-400/30 hover:bg-white/[0.04] transition-all shadow-lg hover:-translate-y-1">
+                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 text-orange-400"><Mail size={48} /></div>
+                                                <div className="relative z-10">
+                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Mail size={12} /> User Role</div>
+                                                    <div className="text-2xl font-black italic tracking-tighter text-white uppercase">{selectedUserDetails.user_detail.role}</div>
+                                                    <div className="text-[10px] bg-orange-400/10 px-2 py-1 rounded mt-3 w-fit text-orange-400 font-bold border border-orange-400/20">System Access</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                            {/* Groups Section */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <Users size={14} className="text-lime-400" /> Group Memberships
+                                                </h4>
+                                                <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                                    {selectedUserDetails.groups && selectedUserDetails.groups.length > 0 ? (
+                                                        <div className="divide-y divide-white/5">
+                                                            {selectedUserDetails.groups.map((g: any) => {
+                                                                const groupInfo = g.group || groups.find(group => group.id === g.group_id || group.id === Number(g.group_id));
+                                                                return (
+                                                                    <div key={g.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lime-400 font-black italic overflow-hidden">
+                                                                                {groupInfo?.image ? (
+                                                                                    <img src={resolveImageUrl(groupInfo.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <span>#{g.group_id}</span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-sm font-bold text-white">{groupInfo?.name || `Group ${g.group_id}`}</div>
+                                                                                <div className="text-[10px] text-gray-500">{g.is_admin ? 'Group Admin' : 'Member'}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-[10px] text-gray-600 italic">
+                                                                            Joined {new Date(g.created_at).toLocaleDateString()}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No groups assigned.</div>
+                                                    )}
+                                                </div>
+
+                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                                    <Activity size={14} className="text-blue-400" /> Walk History
+                                                </h4>
+                                                <div className="glass rounded-[2rem] overflow-hidden border border-white/5 max-h-[250px] overflow-y-auto">
+                                                    {selectedUserDetails.walk_history && selectedUserDetails.walk_history.length > 0 ? (
+                                                        <div className="divide-y divide-white/5">
+                                                            {selectedUserDetails.walk_history.map((h: any, i: number) => (
+                                                                <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                    <div className="text-sm font-bold text-gray-300">{new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="text-lg font-black italic tracking-tight text-lime-400">{h.total_steps}</div>
+                                                                        <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Steps</div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No steps recorded.</div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Payments Section */}
+                                            <div className="space-y-6">
+                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <CreditCard size={14} className="text-amber-400" /> Payment Ledger
+                                                </h4>
+                                                <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                                    {selectedUserDetails.payment_history && selectedUserDetails.payment_history.length > 0 ? (
+                                                        <div className="divide-y divide-white/5">
+                                                            {selectedUserDetails.payment_history.map((p: any) => (
+                                                                <div key={p.id} className="p-5 hover:bg-white/5 transition-colors">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div className="text-sm font-black italic tracking-tight text-white">{p.amount} {p.currency}</div>
+                                                                        <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${p.status === 'success' ? 'bg-lime-400/10 border-lime-400/20 text-lime-400' : 'bg-red-400/10 border-red-400/20 text-red-400'}`}>
+                                                                            {p.status}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-end">
+                                                                        <div>
+                                                                            <div className="text-[10px] text-gray-600 font-mono">ID: {p.stripe_session_id.substring(0, 15)}...</div>
+                                                                            <div className="text-[10px] text-gray-500 mt-1">Expiry: {new Date(p.expire_date).toLocaleDateString()}</div>
+                                                                        </div>
+                                                                        <div className="text-[10px] text-gray-600 italic">
+                                                                            {new Date(p.created_at).toLocaleDateString()}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No payment history.</div>
+                                                    )}
+                                                </div>
+
+                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                                    <FileText size={14} className="text-purple-400" /> Community Posts
+                                                </h4>
+                                                <div className="glass rounded-[2rem] overflow-hidden border border-white/5">
+                                                    {(() => {
+                                                        const userPosts = Array.isArray(selectedUserDetails?.community_post?.posts)
+                                                            ? selectedUserDetails.community_post.posts
+                                                            : Array.isArray(selectedUserDetails?.community_post)
+                                                                ? selectedUserDetails.community_post
+                                                                : Array.isArray(selectedUserDetails?.posts)
+                                                                    ? selectedUserDetails.posts
+                                                                    : [];
+
+                                                        return userPosts.length > 0 ? (
+                                                            <div className="p-6 grid grid-cols-4 gap-4">
+                                                                {userPosts.map((post: any) => (
+                                                                    <div key={post.id || post.post_id} className="aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-600 hover:border-purple-400/30 hover:text-purple-400 transition-all cursor-default overflow-hidden group/post relative">
+                                                                        {post.image || post.photo || post.url || post.media_url ? (
+                                                                            <img src={resolveImageUrl(post.image || post.photo || post.url || post.media_url) || ''} alt="" className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
+                                                                        ) : (
+                                                                            <div className="p-2 text-center break-words w-full line-clamp-3">
+                                                                                {post.content ? `"${post.content}"` : `#${post.post_id || post.id}`}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No community posts yet.</div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="p-20 text-center text-gray-600 text-xs font-bold italic">Select a user to view their records.</div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
+                )}
 
                 {/* Group Detail Modal */}
                 {selectedGroup && (
@@ -1046,7 +1070,7 @@ export default function AdminPanel() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="flex-1 overflow-y-auto">
                                 <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-6">
                                     <span>Group Members</span>
@@ -1101,23 +1125,23 @@ export default function AdminPanel() {
                 {postToDelete && (
                     <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setPostToDelete(null)}></div>
-                        
+
                         <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
                             <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                                 <Trash2 size={40} />
                             </div>
-                            
+
                             <h3 className="text-2xl font-black italic uppercase tracking-tight text-white mb-2">Delete Post?</h3>
                             <p className="text-gray-400 font-medium mb-8">This action cannot be undone. Once deleted, this post will be permanently removed from the ecosystem.</p>
-                            
+
                             <div className="flex w-full gap-4">
-                                <button 
+                                <button
                                     onClick={() => setPostToDelete(null)}
                                     className="flex-1 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all border border-white/5 hover:border-white/20 active:scale-95"
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button
                                     onClick={confirmDelete}
                                     disabled={isDeletingPost !== null}
                                     className="flex-1 py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1134,7 +1158,7 @@ export default function AdminPanel() {
                         </div>
                     </div>
                 )}
-                </main>
-            </div>
-        );
+            </main>
+        </div>
+    );
 }
