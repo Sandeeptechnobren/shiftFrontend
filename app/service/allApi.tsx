@@ -182,3 +182,41 @@ export const deletePost = async (postId: number | string) => {
     }
 };
 
+export const updateUserStatus = async (userId: number | string, isActive: 0 | 1) => {
+    try {
+        const res = await API.post(`/api/admin/user/status/${userId}`, {
+            account_is_active: isActive,
+        });
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const getUnpaidAccess = async () => {
+    try {
+        const res = await API.get('/api/admin/unpaid-access');
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const addUnpaidAccess = async (payload: { menu_id: number; submenu_id?: number | null }) => {
+    try {
+        const res = await API.post('/api/admin/unpaid-access/add', payload);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const removeUnpaidAccess = async (payload: { id?: number | string, menu_id: number | string, submenu_id?: number | string | null }) => {
+    try {
+        const res = await API.post(`/api/admin/unpaid-access/remove`, payload);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
