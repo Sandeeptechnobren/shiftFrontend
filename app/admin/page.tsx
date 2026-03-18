@@ -24,7 +24,7 @@ import {
     Trash2,
     TrendingUp
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus } from '../service/allApi';
 
 // --- Mock Data ---
 
@@ -213,17 +213,17 @@ export default function AdminPanel() {
         setPostToDelete(postId);
     };
 
-    // const handleStatusChange = async (user: any, newStatus: 0 | 1) => {
-    //     // Optimistically update UI
-    //     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: newStatus, is_active: newStatus === 1 } : u));
-    //     try {
-    //         await updateUserStatus(user.id, newStatus);
-    //     } catch (err) {
-    //         console.error('Failed to update user status:', err);
-    //         // Revert on failure
-    //         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u));
-    //     }
-    // };
+    const handleStatusChange = async (user: any, newStatus: 0 | 1) => {
+        // Optimistically update UI
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: newStatus, is_active: newStatus === 1 } : u));
+        try {
+            await updateUserStatus(user.id, newStatus);
+        } catch (err) {
+            console.error('Failed to update user status:', err);
+            // Revert on failure
+            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u));
+        }
+    };
 
     const confirmDelete = async () => {
         if (!postToDelete) return;
@@ -629,17 +629,34 @@ export default function AdminPanel() {
                                                         </div>
                                                     </td>
                                                     <td className="p-6" onClick={e => e.stopPropagation()}>
-                                                        <select
-                                                            value={(user.account_is_active === 1 || user.account_is_active === true || user.is_active) ? '1' : '0'}
-                                                            // onChange={(e) => (user, parseInt(e.target.value) as 0 | 1)}
-                                                            className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer outline-none transition-all ${(user.account_is_active === 1 || user.account_is_active === true || user.is_active)
-                                                                ? 'bg-lime-400/10 border-lime-400/30 text-lime-400'
-                                                                : 'bg-gray-800/60 border-white/10 text-gray-400'
-                                                                } [&>option]:bg-gray-900 [&>option]:text-white`}
-                                                        >
-                                                            <option value="1">Active</option>
-                                                            <option value="0">Inactive</option>
-                                                        </select>
+                                                        {(() => {
+                                                            const isActive = user.account_is_active === 1 || user.account_is_active === true || user.is_active;
+                                                            return (
+                                                                <div className="relative flex items-center bg-gray-900/80 rounded-xl border border-white/6 p-0.5 w-fit shadow-inner">
+                                                                    {/* Sliding highlight */}
+                                                                    <div
+                                                                        className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive
+                                                                            ? 'left-0.5 bg-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.5)]'
+                                                                            : 'left-[calc(50%+1px)] bg-gray-700'
+                                                                        }`}
+                                                                    />
+                                                                    {/* Active button */}
+                                                                    <button
+                                                                        onClick={() => handleStatusChange(user, 1)}
+                                                                        className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                                                                    >
+                                                                        Active
+                                                                    </button>
+                                                                    {/* Inactive button */}
+                                                                    <button
+                                                                        onClick={() => handleStatusChange(user, 0)}
+                                                                        className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${!isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                                                                    >
+                                                                        Inactive
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-2">

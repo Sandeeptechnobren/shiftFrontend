@@ -182,3 +182,14 @@ export const deletePost = async (postId: number | string) => {
     }
 };
 
+export const updateUserStatus = async (userId: number | string, isActive: 0 | 1) => {
+    try {
+        const res = await API.post(`/api/admin/user/status/${userId}`, {
+            account_is_active: isActive,
+        });
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
