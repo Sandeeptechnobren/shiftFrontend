@@ -22,9 +22,10 @@ import {
     Calendar,
     Image as ImageIcon,
     Trash2,
-    TrendingUp
+    TrendingUp,
+    LayoutList
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess } from '../service/allApi';
 
 // --- Mock Data ---
 
@@ -86,6 +87,17 @@ export default function AdminPanel() {
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [menuItems, setMenuItems] = useState<any[]>([]);
+    const [isLoadingMenu, setIsLoadingMenu] = useState(false);
+    
+    // For add menu
+    const [isAddingMenu, setIsAddingMenu] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [accessToRemove, setAccessToRemove] = useState<any>(null);
+    const [isRemovingAccess, setIsRemovingAccess] = useState(false);
+    const [newMenuId, setNewMenuId] = useState('');
+    const [newSubmenuId, setNewSubmenuId] = useState('');
+    const [addMenuError, setAddMenuError] = useState<string | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -208,6 +220,77 @@ export default function AdminPanel() {
 
         fetchPosts();
     }, [view]);
+
+    useEffect(() => {
+        const fetchMenuItems = async () => {
+             if (view !== 'menu') return;
+             setIsLoadingMenu(true);
+             try {
+                 const res = await getUnpaidAccess();
+                 if (res && res.status) {
+                     setMenuItems(res.data || []);
+                 }
+             } catch (err) {
+                 console.error('Error fetching menu items:', err);
+             } finally {
+                 setIsLoadingMenu(false);
+             }
+        };
+
+        fetchMenuItems();
+    }, [view]);
+
+    const handleAddAccessMenuItem = async () => {
+        if (!newMenuId.trim()) return;
+        
+        setIsAddingMenu(true);
+        setAddMenuError(null);
+        try {
+            const payload: any = { menu_id: Number(newMenuId) };
+            if (newSubmenuId.trim()) payload.submenu_id = Number(newSubmenuId);
+            
+            const res = await addUnpaidAccess(payload);
+            if (res && res.status) {
+                // Refresh list
+                const fresh = await getUnpaidAccess();
+                if (fresh && fresh.status) {
+                    setMenuItems(fresh.data || []);
+                }
+                setNewMenuId('');
+                setNewSubmenuId('');
+                setIsAddModalOpen(false);
+            } else {
+                setAddMenuError('Add failed. Please verify the IDs.');
+            }
+        } catch (err) {
+            console.error('Error adding new menu item:', err);
+            setAddMenuError('Failed to add. Please try again.');
+        } finally {
+             setIsAddingMenu(false);
+        }
+    };
+    
+    const handleRemoveAccessMenuItem = async (item: any) => {
+        setIsRemovingAccess(true);
+        try {
+            const payload: any = { menu_id: item.menu_id };
+            if (item.id) payload.id = item.id;
+            if (item.submenu_id) payload.submenu_id = item.submenu_id;
+
+            const res = await removeUnpaidAccess(payload);
+            if (res && res.status) {
+                setMenuItems(prev => prev.filter(i => i.id !== item.id));
+                setAccessToRemove(null);
+            } else {
+                alert('Remove failed.');
+            }
+        } catch (err) {
+            console.error('Error removing new menu item:', err);
+            alert('Failed to remove.');
+        } finally {
+            setIsRemovingAccess(false);
+        }
+    };
 
     const handleDeletePost = (postId: number) => {
         setPostToDelete(postId);
@@ -374,6 +457,13 @@ export default function AdminPanel() {
                         <ImageIcon size={20} className={view === 'posts' ? 'text-black' : ''} />
                         <span>Posts</span>
                     </button>
+                    <button
+                        onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); }}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'menu' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                    >
+                        <Layers size={20} className={view === 'menu' ? 'text-black' : ''} />
+                        <span>Menu Access</span>
+                    </button>
                 </nav>
 
                 <div className="mt-auto">
@@ -398,13 +488,14 @@ export default function AdminPanel() {
                     </div>
                     <div className="hidden md:block">
                         <h1 className="text-3xl font-black italic tracking-tighter uppercase">
-                            {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : 'Content Moderation'}
+                            {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : view === 'menu' ? 'Menu Access' : 'Content Moderation'}
                         </h1>
                         <p className="text-gray-500 text-sm">
                             {view === 'users' ? 'Monitor, manage and moderate user activities.' :
                                 view === 'admin' ? 'System-wide administrative overview.' :
                                     view === 'groups' ? 'Orchestrate and oversee all active communities.' :
-                                        'Review and manage user-generated posts across the platform.'}
+                                        view === 'menu' ? 'Manage accessible menu items and quick actions.' :
+                                            'Review and manage user-generated posts across the platform.'}
                         </p>
                     </div>
 
@@ -638,7 +729,7 @@ export default function AdminPanel() {
                                                                         className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive
                                                                             ? 'left-0.5 bg-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.5)]'
                                                                             : 'left-[calc(50%+1px)] bg-gray-700'
-                                                                        }`}
+                                                                            }`}
                                                                     />
                                                                     {/* Active button */}
                                                                     <button
@@ -803,6 +894,213 @@ export default function AdminPanel() {
                                 <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-10">
                                     <ImageIcon size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
                                     <p className="text-gray-500 font-bold italic tracking-tighter">No posts found.</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : view === 'menu' ? (
+                        <div className="max-w-7xl mx-auto animate-slide-up">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                <div>
+                                    <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">Unpaid Access Control</h2>
+                                    <p className="text-gray-500 text-sm mt-1">{menuItems.length} menu mappings configured.</p>
+                                </div>
+                                <button 
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="bg-lime-400 hover:bg-lime-300 text-black px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                                >
+                                    <span className="text-lg leading-none">+</span> Add Access
+                                </button>
+                            </div>
+                            
+                            {/* Table */}
+                            <div className="glass-card rounded-[2rem] overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-white/5 bg-white/[0.02]">
+                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">ID</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Menu</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Submenu</th>
+                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {isLoadingMenu ? (
+                                                <tr>
+                                                    <td colSpan={4} className="p-10 text-center">
+                                                         <div className="w-8 h-8 mx-auto border-2 border-lime-400/20 border-t-lime-400 rounded-full animate-spin mb-3"></div>
+                                                         <p className="text-gray-500 font-bold italic tracking-tighter text-sm">Loading access mappings...</p>
+                                                    </td>
+                                                </tr>
+                                            ) : menuItems.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4} className="p-10 text-center">
+                                                        <LayoutList size={32} className="mx-auto text-gray-700 mb-4 opacity-20" />
+                                                        <p className="text-gray-500 font-bold italic tracking-tighter text-sm">No mappings found.</p>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                menuItems.map((item, idx) => (
+                                                    <tr 
+                                                        key={item.id}
+                                                        className="group hover:bg-white/[0.04] transition-colors animate-fade-in"
+                                                        style={{ animationDelay: `${idx * 0.05}s` }}
+                                                    >
+                                                        <td className="p-6">
+                                                            <div className="text-sm font-bold text-gray-400">#{item.id}</div>
+                                                        </td>
+                                                        <td className="p-6">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 overflow-hidden">
+                                                                    {item.menu_image ? (
+                                                                        <img src={resolveImageUrl(item.menu_image) || ''} alt="" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <Layers size={18} className="text-gray-500" />
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-bold text-white group-hover:text-lime-400 transition-colors">{item.menu_name || 'Unknown'}</div>
+                                                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Menu ID: {item.menu_id}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-6">
+                                                            {item.submenu_id ? (
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-black/30 border border-white/5 flex items-center justify-center text-sm shadow-inner overflow-hidden">
+                                                                        {item.submenu_image ? (
+                                                                           <img src={resolveImageUrl(item.submenu_image) || ''} alt="" className="w-full h-full object-cover" />     
+                                                                        ) : (
+                                                                           <span className="text-gray-600">-</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="font-bold text-gray-300">{item.submenu_name || 'Unknown'}</div>
+                                                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Sub ID: {item.submenu_id}</div>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-sm font-bold text-gray-600 italic px-3 py-1.5 rounded-lg bg-white/5 w-fit border border-white/5">No Submenu</div>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-6 text-right">
+                                                            <button 
+                                                                onClick={() => setAccessToRemove(item)}
+                                                                className="p-2 text-gray-600 hover:text-red-400 transition-colors rounded-xl hover:bg-red-500/10 hover:scale-110 inline-flex"
+                                                                title="Remove Access"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Add Access Modal */}
+                            {isAddModalOpen && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setIsAddModalOpen(false)}></div>
+                                    <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-white/10 shadow-2xl overflow-hidden group/modal">
+                                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-lime-400/10 rounded-full blur-3xl group-hover/modal:bg-lime-400/20 transition-colors"></div>
+                                        <button
+                                            onClick={() => setIsAddModalOpen(false)}
+                                            className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all relative z-10"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                        
+                                        <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-6 relative z-10 flex items-center gap-3">
+                                            <Layers size={20} className="text-lime-400" />
+                                            Add Access
+                                        </h3>
+                                        
+                                        <div className="space-y-4 relative z-10">
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Menu ID *</label>
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="e.g. 1" 
+                                                    value={newMenuId}
+                                                    onChange={e => { setNewMenuId(e.target.value); setAddMenuError(null); }}
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Submenu ID (Optional)</label>
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="e.g. 2" 
+                                                    value={newSubmenuId}
+                                                    onChange={e => { setNewSubmenuId(e.target.value); setAddMenuError(null); }}
+                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all"
+                                                />
+                                            </div>
+
+                                            {addMenuError && (
+                                                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-fade-in shadow-inner">
+                                                    <div className="mt-0.5 rounded-full bg-red-500/20 text-red-500 p-1 shrink-0">
+                                                        <Shield size={12} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs font-bold text-red-400 mb-0.5 uppercase tracking-wider">Access Denied</div>
+                                                        <p className="text-xs text-red-400/80 italic">{addMenuError}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="pt-4">
+                                                <button 
+                                                    disabled={isAddingMenu || !newMenuId.trim()}
+                                                    onClick={handleAddAccessMenuItem}
+                                                    className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-black px-4 py-3.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(163,230,53,0.2)] active:scale-95 flex items-center justify-center gap-2 border border-lime-400/50"
+                                                >
+                                                    {isAddingMenu ? (
+                                                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                                    ) : 'Grant Access'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Delete Confirmation Modal */}
+                            {accessToRemove !== null && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => !isRemovingAccess && setAccessToRemove(null)}></div>
+                                    <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] overflow-hidden group/modal text-center">
+                                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-3xl transition-colors"></div>
+                                        
+                                        <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6 relative z-10 border border-red-500/20 shadow-inner">
+                                            <Trash2 size={24} className={isRemovingAccess ? "animate-bounce" : ""} />
+                                        </div>
+                                        
+                                        <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-2 relative z-10">Remove Access?</h3>
+                                        <p className="text-sm text-gray-400 mb-8 relative z-10">This action cannot be undone. Are you sure you want to permanently delete this menu mapping?</p>
+                                        
+                                        <div className="flex gap-3 relative z-10">
+                                            <button 
+                                                onClick={() => setAccessToRemove(null)}
+                                                disabled={isRemovingAccess}
+                                                className="flex-1 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+                                            >
+                                                No, Keep It
+                                            </button>
+                                            <button 
+                                                onClick={() => handleRemoveAccessMenuItem(accessToRemove)}
+                                                disabled={isRemovingAccess}
+                                                className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)] active:scale-95 flex items-center justify-center gap-2"
+                                            >
+                                                {isRemovingAccess ? (
+                                                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                                ) : 'Yes, Delete'}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
