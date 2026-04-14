@@ -23,17 +23,19 @@ import {
     Image as ImageIcon,
     Trash2,
     TrendingUp,
-    LayoutList
+    LayoutList,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess } from '../service/allApi';
 
 // --- Mock Data ---
 
 const mockUsers = [
-    { id: 1, name: 'Active Jeri', email: 'jeri@shift.com', role: 'Admin', status: 'Online', joinDate: 'Dec 12, 2024', avatar: '🏃', country: '🇬🇧', paymentStatus: 'Paid', walkTime: '120h 45m', walkHistory: '8.5k avg/day', group: 'London Sprinters', paymentHistory: '$15/mo - Active', postDate: 'Dec 15, 2024', totalSteps: '1.2M' },
+    { id: 1, name: 'Active Jeri', email: 'jeri@shift.com', role: 'Admin', status: 'Online', joinDate: 'Dec 12, 2024', avatar: '🏃', country: '🇬🇧', paymentStatus: 'Paid', walkTime: '120h 45m', walkHistory: '8.5k avg/day', group: 'London Sprinters', paymentHistory: 'GH₵15/mo - Active', postDate: 'Dec 15, 2024', totalSteps: '1.2M' },
     { id: 2, name: 'Bertha', email: 'bertha@shift.com', role: 'User', status: 'Away', joinDate: 'Jan 05, 2025', avatar: '👤', country: '🇬🇭', paymentStatus: 'Unpaid', walkTime: '45h 20m', walkHistory: '3.2k avg/day', group: '-', paymentHistory: 'Free Tier', postDate: 'Jan 10, 2025', totalSteps: '340k' },
-    { id: 3, name: 'Lazy Jo', email: 'jo@shift.com', role: 'User', status: 'Offline', joinDate: 'Feb 15, 2025', avatar: '🏃', country: '🇺🇸', paymentStatus: 'Paid', walkTime: '200h 10m', walkHistory: '12k avg/day', group: 'Tech Walkers', paymentHistory: '$15/mo - Active', postDate: 'Feb 16, 2025', totalSteps: '2.5M' },
-    { id: 4, name: 'Swift Runner', email: 'swift@shift.com', role: 'Moderator', status: 'Online', joinDate: 'Mar 01, 2025', avatar: '⚡', country: '🇮🇳', paymentStatus: 'Paid', walkTime: '80h 30m', walkHistory: '15k avg/day', group: 'Global Guardians', paymentHistory: '$15/mo - Active', postDate: 'Mar 05, 2025', totalSteps: '890k' },
+    { id: 3, name: 'Lazy Jo', email: 'jo@shift.com', role: 'User', status: 'Offline', joinDate: 'Feb 15, 2025', avatar: '🏃', country: '🇺🇸', paymentStatus: 'Paid', walkTime: '200h 10m', walkHistory: '12k avg/day', group: 'Tech Walkers', paymentHistory: 'GH₵15/mo - Active', postDate: 'Feb 16, 2025', totalSteps: '2.5M' },
+    { id: 4, name: 'Swift Runner', email: 'swift@shift.com', role: 'Moderator', status: 'Online', joinDate: 'Mar 01, 2025', avatar: '⚡', country: '🇮🇳', paymentStatus: 'Paid', walkTime: '80h 30m', walkHistory: '15k avg/day', group: 'Global Guardians', paymentHistory: 'GH₵15/mo - Active', postDate: 'Mar 05, 2025', totalSteps: '890k' },
 ];
 
 // --- Components ---
@@ -64,6 +66,8 @@ const ActivityPulse = () => {
 
 export default function AdminPanel() {
     const router = useRouter();
+    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const isDark = theme === 'dark';
     const [view, setView] = useState('users'); // 'users', 'admin', 'groups', or 'posts'
     const [searchTerm, setSearchTerm] = useState('');
     const [userFilter, setUserFilter] = useState('All'); // 'All', 'Paid', 'Unpaid'
@@ -89,7 +93,7 @@ export default function AdminPanel() {
     const [error, setError] = useState<string | null>(null);
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
-    
+
     // For add menu
     const [isAddingMenu, setIsAddingMenu] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -143,7 +147,7 @@ export default function AdminPanel() {
                     setGroups(rawGroups);
                 }
             } catch (err) {
-                console.error('Error fetching admin data:', err);
+                // console.error('Error fetching admin data:', err);
                 setError('Failed to load system data');
             } finally {
                 setIsLoading(false);
@@ -165,7 +169,7 @@ export default function AdminPanel() {
                     setSelectedUserDetails(res);
                 }
             } catch (err) {
-                console.error('Error fetching user details:', err);
+                // console.error('Error fetching user details:', err);
             } finally {
                 setIsLoadingDetails(false);
             }
@@ -189,7 +193,7 @@ export default function AdminPanel() {
                     setGroupMembers(rawMembers);
                 }
             } catch (err) {
-                console.error('Error fetching group members:', err);
+                // console.error('Error fetching group members:', err);
             } finally {
                 setIsLoadingGroupMembers(false);
             }
@@ -205,14 +209,14 @@ export default function AdminPanel() {
             setIsLoadingPosts(true);
             try {
                 const res = await getAllPosts();
-                console.log('[Posts] API Response:', res);
+                // console.log('[Posts] API Response:', res);
                 const rawPosts = Array.isArray(res?.posts) ? res.posts
                     : Array.isArray(res?.data) ? res.data
                         : Array.isArray(res) ? res
                             : [];
                 setPosts(rawPosts);
             } catch (err) {
-                console.error('Error fetching posts:', err);
+                // console.error('Error fetching posts:', err);
             } finally {
                 setIsLoadingPosts(false);
             }
@@ -223,18 +227,18 @@ export default function AdminPanel() {
 
     useEffect(() => {
         const fetchMenuItems = async () => {
-             if (view !== 'menu') return;
-             setIsLoadingMenu(true);
-             try {
-                 const res = await getUnpaidAccess();
-                 if (res && res.status) {
-                     setMenuItems(res.data || []);
-                 }
-             } catch (err) {
-                 console.error('Error fetching menu items:', err);
-             } finally {
-                 setIsLoadingMenu(false);
-             }
+            if (view !== 'menu') return;
+            setIsLoadingMenu(true);
+            try {
+                const res = await getUnpaidAccess();
+                if (res && res.status) {
+                    setMenuItems(res.data || []);
+                }
+            } catch (err) {
+                // console.error('Error fetching menu items:', err);
+            } finally {
+                setIsLoadingMenu(false);
+            }
         };
 
         fetchMenuItems();
@@ -242,13 +246,13 @@ export default function AdminPanel() {
 
     const handleAddAccessMenuItem = async () => {
         if (!newMenuId.trim()) return;
-        
+
         setIsAddingMenu(true);
         setAddMenuError(null);
         try {
             const payload: any = { menu_id: Number(newMenuId) };
             if (newSubmenuId.trim()) payload.submenu_id = Number(newSubmenuId);
-            
+
             const res = await addUnpaidAccess(payload);
             if (res && res.status) {
                 // Refresh list
@@ -263,13 +267,13 @@ export default function AdminPanel() {
                 setAddMenuError('Add failed. Please verify the IDs.');
             }
         } catch (err) {
-            console.error('Error adding new menu item:', err);
+            // console.error('Error adding new menu item:', err);
             setAddMenuError('Failed to add. Please try again.');
         } finally {
-             setIsAddingMenu(false);
+            setIsAddingMenu(false);
         }
     };
-    
+
     const handleRemoveAccessMenuItem = async (item: any) => {
         setIsRemovingAccess(true);
         try {
@@ -285,7 +289,7 @@ export default function AdminPanel() {
                 alert('Remove failed.');
             }
         } catch (err) {
-            console.error('Error removing new menu item:', err);
+            // console.error('Error removing new menu item:', err);
             alert('Failed to remove.');
         } finally {
             setIsRemovingAccess(false);
@@ -302,7 +306,7 @@ export default function AdminPanel() {
         try {
             await updateUserStatus(user.id, newStatus);
         } catch (err) {
-            console.error('Failed to update user status:', err);
+            // console.error('Failed to update user status:', err);
             // Revert on failure
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u));
         }
@@ -318,7 +322,7 @@ export default function AdminPanel() {
             setPosts(posts.filter((post) => post.post_id !== postToDelete));
             setPostToDelete(null);
         } catch (err) {
-            console.error('Error deleting post:', err);
+            // console.error('Error deleting post:', err);
             alert('Failed to delete the post. Please try again.');
         } finally {
             setIsDeletingPost(null);
@@ -366,20 +370,41 @@ export default function AdminPanel() {
         return `${baseUrl}/${finalPath}`;
     };
 
+    // Theme-aware class helpers
+    const bg = isDark ? 'bg-gray-950' : 'bg-gray-50';
+    const text = isDark ? 'text-white' : 'text-gray-950';
+    const textMuted = isDark ? 'text-gray-400' : 'text-gray-500';
+    const textSub = isDark ? 'text-gray-500' : 'text-gray-400';
+    const borderColor = isDark ? 'border-white/5' : 'border-gray-200';
+    const glassBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.85)';
+    const glassBorder = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+    const glassCardBgFrom = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)';
+    const glassCardBgTo = isDark ? 'rgba(255,255,255,0.01)' : 'rgba(249,250,251,0.95)';
+    const glassCardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+    const scrollThumb = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)';
+    const inputBg = isDark ? 'bg-black/40' : 'bg-white';
+    const inputBorder = isDark ? 'border-white/10' : 'border-gray-200';
+    const inputText = isDark ? 'text-white' : 'text-gray-900';
+    const rowHover = isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-100/70';
+    const theadBg = isDark ? 'bg-white/[0.02]' : 'bg-gray-100/60';
+    const divideColor = isDark ? 'divide-white/5' : 'divide-gray-200';
+    const sidebarBtnActive = 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]';
+    const sidebarBtnInactive = isDark ? `${textMuted} hover:text-white hover:bg-white/5 hover:scale-[1.02]` : `${textMuted} hover:text-gray-900 hover:bg-black/5 hover:scale-[1.02]`;
+
     return (
-        <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-lime-400 selection:text-black flex flex-col md:flex-row h-screen overflow-hidden">
+        <div className={`min-h-screen ${bg} ${text} font-sans selection:bg-lime-400 selection:text-black flex flex-col md:flex-row h-screen overflow-hidden transition-colors duration-300`}>
             <style jsx global>{`
                 .glass {
-                    background: rgba(255, 255, 255, 0.03);
+                    background: ${glassBg};
                     backdrop-filter: blur(16px);
                     -webkit-backdrop-filter: blur(16px);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border: 1px solid ${glassBorder};
                 }
                 .glass-card {
-                    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+                    background: linear-gradient(145deg, ${glassCardBgFrom} 0%, ${glassCardBgTo} 100%);
                     backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+                    border: 1px solid ${glassCardBorder};
+                    box-shadow: 0 4px 30px ${isDark ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)'};
                 }
                 @keyframes slideUp {
                     from { transform: translateY(20px); opacity: 0; }
@@ -402,7 +427,6 @@ export default function AdminPanel() {
                 .animate-scale-in {
                     animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
-                
                 ::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -410,7 +434,7 @@ export default function AdminPanel() {
                     background: transparent;
                 }
                 ::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: ${scrollThumb};
                     border-radius: 10px;
                 }
                 ::-webkit-scrollbar-thumb:hover {
@@ -419,7 +443,7 @@ export default function AdminPanel() {
             `}</style>
 
             {/* Sidebar */}
-            <aside className="hidden md:flex flex-col w-72 h-full glass border-r border-white/5 p-8 gap-10 shrink-0 z-10">
+            <aside className={`hidden md:flex flex-col w-72 h-full glass border-r ${borderColor} p-8 gap-10 shrink-0 z-10`}>
                 <div className="flex items-center">
                     <div className="w-40 h-24 relative">
                         <Image src="/logo.png" alt="Logo" fill className="object-contain" />
@@ -427,17 +451,16 @@ export default function AdminPanel() {
                 </div>
 
                 <nav className="flex flex-col gap-3 flex-1">
-                    {/* <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 ml-2">Console</p> */}
                     <button
                         onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Shield size={20} className={view === 'admin' ? 'text-black' : ''} />
                         <span>Admin</span>
                     </button>
                     <button
                         onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Users size={20} className={view === 'users' ? 'text-black' : ''} />
                         <span>Users</span>
@@ -445,31 +468,58 @@ export default function AdminPanel() {
 
                     <button
                         onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'groups' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'groups' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'groups' ? 'text-black' : ''} />
                         <span>Groups</span>
                     </button>
                     <button
                         onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'posts' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'posts' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <ImageIcon size={20} className={view === 'posts' ? 'text-black' : ''} />
                         <span>Posts</span>
                     </button>
                     <button
                         onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'menu' ? 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5 hover:scale-[1.02]'}`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'menu' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'menu' ? 'text-black' : ''} />
                         <span>Menu Access</span>
                     </button>
                 </nav>
 
-                <div className="mt-auto">
+                {/* Theme Toggle Section */}
+                <div className={`rounded-2xl border ${borderColor} p-4 ${isDark ? 'bg-white/[0.02]' : 'bg-black/[0.02]'}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${textMuted} mb-3`}>Theme</p>
+                    <div className={`flex items-center gap-2 p-1 rounded-xl ${isDark ? 'bg-gray-900/60' : 'bg-gray-200/60'}`}>
+                        <button
+                            onClick={() => setTheme('dark')}
+                            className={`flex items-center justify-center gap-2 flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${isDark
+                                ? 'bg-gray-800 text-lime-400 shadow-[0_2px_10px_rgba(0,0,0,0.3)] border border-white/10'
+                                : `${textMuted} hover:text-gray-700`
+                                }`}
+                        >
+                            <Moon size={14} />
+                            <span>Dark</span>
+                        </button>
+                        <button
+                            onClick={() => setTheme('light')}
+                            className={`flex items-center justify-center gap-2 flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${!isDark
+                                ? 'bg-white text-amber-500 shadow-[0_2px_10px_rgba(0,0,0,0.1)] border border-black/5'
+                                : `${textMuted} hover:text-gray-300`
+                                }`}
+                        >
+                            <Sun size={14} />
+                            <span>Light</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center gap-4 p-4 w-full rounded-2xl text-gray-500 hover:text-white hover:bg-white/5 transition-all group"
+                        className={`flex items-center gap-4 p-4 w-full rounded-2xl ${textMuted} ${isDark ? 'hover:text-white hover:bg-white/5' : 'hover:text-gray-900 hover:bg-black/5'} transition-all group`}
                     >
                         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Back to App</span>
@@ -480,7 +530,7 @@ export default function AdminPanel() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Header */}
-                <header className="px-6 pt-6 pb-4 md:px-8 md:pt-6 md:pb-4 flex items-center justify-between border-b border-white/5 glass z-10 shrink-0">
+                <header className={`px-6 pt-6 pb-4 md:px-8 md:pt-6 md:pb-4 flex items-center justify-between border-b ${borderColor} glass z-10 shrink-0`}>
                     <div className="flex items-center gap-4 md:hidden">
                         <button onClick={() => router.push('/dashboard')} className="p-2 glass rounded-xl">
                             <ArrowLeft size={20} />
@@ -490,7 +540,7 @@ export default function AdminPanel() {
                         <h1 className="text-3xl font-black italic tracking-tighter uppercase">
                             {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : view === 'menu' ? 'Menu Access' : 'Content Moderation'}
                         </h1>
-                        <p className="text-gray-500 text-sm">
+                        <p className={`${textMuted} text-sm`}>
                             {view === 'users' ? 'Monitor, manage and moderate user activities.' :
                                 view === 'admin' ? 'System-wide administrative overview.' :
                                     view === 'groups' ? 'Orchestrate and oversee all active communities.' :
@@ -500,20 +550,29 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border border-white/10 group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)] transition-all">
-                            <Search size={18} className="text-gray-500 group-focus-within:text-lime-400 transition-colors" />
+                        <div className={`hidden sm:flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border ${borderColor} group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)] transition-all`}>
+                            <Search size={18} className={`${textSub} group-focus-within:text-lime-400 transition-colors`} />
                             <input
                                 type="text"
                                 placeholder="Search details..."
-                                className="bg-transparent border-none outline-none text-sm w-48 font-medium placeholder:text-gray-600 focus:placeholder:text-gray-500"
+                                className={`bg-transparent border-none outline-none text-sm w-48 font-medium ${isDark ? 'placeholder:text-gray-700' : 'placeholder:text-gray-400'} focus:placeholder:${textMuted}`}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        {/* Mobile theme toggle */}
+                        <button
+                            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                            className={`p-3 glass rounded-2xl transition-all group overflow-hidden relative ${isDark ? 'hover:border-amber-400/30' : 'hover:border-gray-900/30'}`}
+                            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        >
+                            <div className="absolute inset-0 bg-lime-400/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                            {isDark ? <Sun size={20} className="group-hover:text-amber-400 relative z-10 transition-colors" /> : <Moon size={20} className="group-hover:text-indigo-400 relative z-10 transition-colors" />}
+                        </button>
                         <button className="relative p-3 glass rounded-2xl hover:border-lime-400/30 transition-all group overflow-hidden">
                             <div className="absolute inset-0 bg-lime-400/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
                             <Bell size={22} className="group-hover:text-lime-400 relative z-10 transition-colors" />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-lime-400 rounded-full border border-gray-950 shadow-[0_0_5px_rgba(163,230,53,0.8)] z-10"></span>
+                            <span className={`absolute top-2.5 right-2.5 w-2 h-2 bg-lime-400 rounded-full border ${isDark ? 'border-gray-950' : 'border-gray-50'} shadow-[0_0_5px_rgba(163,230,53,0.8)] z-10`}></span>
                         </button>
                     </div>
                 </header>
@@ -521,7 +580,7 @@ export default function AdminPanel() {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
                     {view === 'admin' ? (
-                        <div className="max-w-6xl mx-auto space-y-8 animate-slide-up">
+                        <div className="w-full space-y-8 animate-slide-up">
                             {error && (
                                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -541,8 +600,8 @@ export default function AdminPanel() {
                                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
                                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-lime-400/5 rounded-full blur-2xl group-hover:bg-lime-400/10 transition-all"></div>
                                     <Users className="text-lime-400 mb-6" size={32} />
-                                    <div className="text-5xl font-black italic text-white mb-2">{isLoading ? '...' : dashboardData.total_users.toLocaleString()}</div>
-                                    <div className="text-sm font-black text-gray-500 uppercase tracking-widest">Total Users</div>
+                                    <div className={`text-5xl font-black italic ${text} mb-2`}>{isLoading ? '...' : dashboardData.total_users.toLocaleString()}</div>
+                                    <div className={`text-sm font-black ${textMuted} uppercase tracking-widest`}>Total Users</div>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-lime-400 bg-lime-400/10 w-fit px-3 py-1 rounded-full">
                                         <TrendingUp size={12} />
                                         <span>+12% this month</span>
@@ -553,8 +612,8 @@ export default function AdminPanel() {
                                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
                                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-lime-400/5 rounded-full blur-2xl group-hover:bg-lime-400/10 transition-all"></div>
                                     <CreditCard className="text-lime-400 mb-6" size={32} />
-                                    <div className="text-5xl font-black italic text-white mb-2">{isLoading ? '...' : dashboardData.total_paid_users.toLocaleString()}</div>
-                                    <div className="text-sm font-black text-gray-500 uppercase tracking-widest">Paid Users</div>
+                                    <div className={`text-5xl font-black italic ${text} mb-2`}>{isLoading ? '...' : dashboardData.total_paid_users.toLocaleString()}</div>
+                                    <div className={`text-sm font-black ${textMuted} uppercase tracking-widest`}>Paid Users</div>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-lime-400 bg-lime-400/10 w-fit px-3 py-1 rounded-full">
                                         <TrendingUp size={12} />
                                         <span>+5% this month</span>
@@ -565,8 +624,8 @@ export default function AdminPanel() {
                                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
                                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-red-400/5 rounded-full blur-2xl group-hover:bg-red-400/10 transition-all"></div>
                                     <Shield className="text-red-400 mb-6" size={32} />
-                                    <div className="text-5xl font-black italic text-white mb-2">{isLoading ? '...' : dashboardData.total_unpaid_users.toLocaleString()}</div>
-                                    <div className="text-sm font-black text-gray-500 uppercase tracking-widest">Unpaid Users</div>
+                                    <div className={`text-5xl font-black italic ${text} mb-2`}>{isLoading ? '...' : dashboardData.total_unpaid_users.toLocaleString()}</div>
+                                    <div className={`text-sm font-black ${textMuted} uppercase tracking-widest`}>Unpaid Users</div>
                                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-red-400 bg-red-400/10 w-fit px-3 py-1 rounded-full">
                                         <Activity size={12} />
                                         <span>Action Required</span>
@@ -577,9 +636,9 @@ export default function AdminPanel() {
                                 <div className="glass-card rounded-3xl p-8 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
                                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-lime-400/5 rounded-full blur-2xl group-hover:bg-lime-400/10 transition-all"></div>
                                     <Layers className="text-lime-400 mb-6" size={32} />
-                                    <div className="text-5xl font-black italic text-white mb-2">{isLoading ? '...' : dashboardData.total_groups.toLocaleString()}</div>
-                                    <div className="text-sm font-black text-gray-500 uppercase tracking-widest">Total Groups</div>
-                                    <div className="mt-4 flex items-center gap-2 text-xs font-bold text-gray-400 bg-white/5 w-fit px-3 py-1 rounded-full">
+                                    <div className={`text-5xl font-black italic ${text} mb-2`}>{isLoading ? '...' : dashboardData.total_groups.toLocaleString()}</div>
+                                    <div className={`text-sm font-black ${textMuted} uppercase tracking-widest`}>Total Groups</div>
+                                    <div className={`mt-4 flex items-center gap-2 text-xs font-bold ${textMuted} bg-white/5 w-fit px-3 py-1 rounded-full`}>
                                         <Activity size={12} />
                                         <span>Stable</span>
                                     </div>
@@ -587,16 +646,16 @@ export default function AdminPanel() {
                             </div>
 
                             <div className="glass-card rounded-3xl p-8 relative overflow-hidden">
-                                <h2 className="text-xl font-black italic uppercase tracking-tight mb-8">System Activity</h2>
+                                <h2 className={`text-xl font-black italic uppercase tracking-tight mb-8 ${text}`}>System Activity</h2>
                                 <ActivityPulse />
                             </div>
                         </div>
                     ) : view === 'groups' ? (
-                        <div className="max-w-7xl mx-auto animate-slide-up">
+                        <div className="w-full animate-slide-up">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                                 <div>
-                                    <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">Active Communities</h2>
-                                    <p className="text-gray-500 text-sm mt-1">Found {groups.length} active groups in the ecosystem.</p>
+                                    <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Active Communities</h2>
+                                    <p className={`${textMuted} text-sm mt-1`}>Found {groups.length} active groups in the ecosystem.</p>
                                 </div>
                                 <button className="flex items-center gap-2 bg-lime-400 text-black px-5 py-2.5 rounded-xl font-bold transition-all shadow-xl hover:shadow-lime-400/20 active:scale-95">
                                     <Layers size={18} />
@@ -623,8 +682,8 @@ export default function AdminPanel() {
                                                 )}
                                             </div>
 
-                                            <h3 className="text-xl font-black italic tracking-tight text-white mb-2 group-hover:text-lime-400 transition-colors uppercase truncate">{group.name}</h3>
-                                            <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed mb-6 h-8 italic">"{group.description || 'No description provided.'}"</p>
+                                            <h3 className={`text-xl font-black italic tracking-tight ${text} mb-2 group-hover:text-lime-400 transition-colors uppercase truncate`}>{group.name}</h3>
+                                            <p className={`${textMuted} text-xs font-medium line-clamp-2 leading-relaxed mb-6 h-8 italic`}>"{group.description || 'No description provided.'}"</p>
 
                                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
                                                 <div className="flex items-center gap-2">
@@ -650,829 +709,826 @@ export default function AdminPanel() {
                             )}
                         </div>
                     ) : view === 'users' ? (
-                        <div className="max-w-7xl mx-auto animate-slide-up">
+                        <div className="w-full animate-slide-up">
                             {/* Users View Filters */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                                <div className="flex gap-2 bg-gray-900/50 p-1.5 rounded-2xl w-fit glass">
+                                <div className={`flex gap-2 p-1.5 rounded-2xl w-fit glass ${isDark ? 'bg-gray-900/50' : 'bg-white/80'}`}>
                                     {['All', 'Paid', 'Unpaid'].map(flavor => (
                                         <button
                                             key={flavor}
                                             onClick={() => setUserFilter(flavor)}
                                             className={`px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${userFilter === flavor
                                                 ? 'bg-lime-400 text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]'
-                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5'
                                                 }`}
                                         >
                                             {flavor}
                                         </button>
                                     ))}
                                 </div>
-                                <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold transition-all border border-white/10 hover:border-white/20 shadow-xl">
-                                    <Filter size={18} />
-                                    <span className="text-sm">Advanced Filter</span>
-                                </button>
                             </div>
 
                             {/* Users Table */}
-                            <div className="glass-card rounded-[2rem] overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b border-white/5 bg-white/[0.02]">
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">User Details</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Access</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Status</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Type</th>
-                                                <th className="p-6"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {filteredUsers.map((user, idx) => (
-                                                <tr
-                                                    key={user.id}
-                                                    onClick={() => setSelectedUser(user)}
-                                                    className="group hover:bg-white/[0.04] transition-colors cursor-pointer animate-fade-in"
-                                                    style={{ animationDelay: `${idx * 0.05}s` }}
-                                                >
-                                                    <td className="p-6">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 shadow-md overflow-hidden">
-                                                                {user.image ? (
-                                                                    <img src={resolveImageUrl(user.image) || ''} alt="" className="w-full h-full object-cover" />
+                    <div className="glass-card rounded-[2rem] overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className={`border-b ${borderColor} ${theadBg}`}>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>User Details</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>Access</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>Status</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>Type</th>
+                                        <th className="p-6"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${divideColor}`}>
+                                    {filteredUsers.map((user, idx) => (
+                                        <tr
+                                            key={user.id}
+                                            onClick={() => setSelectedUser(user)}
+                                            className={`group ${rowHover} transition-colors cursor-pointer animate-fade-in`}
+                                            style={{ animationDelay: `${idx * 0.05}s` }}
+                                        >
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 shadow-md overflow-hidden">
+                                                        {user.image ? (
+                                                            <img src={resolveImageUrl(user.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <span>👤</span>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className={`font-bold flex items-center gap-2 ${text} group-hover:text-lime-400 transition-colors`}>
+                                                            {user.username || user.name || 'Anonymous'}
+                                                        </div>
+                                                        <div className={`text-xs ${textMuted} flex items-center gap-1 mt-1`}>
+                                                            <Mail size={10} />
+                                                            {user.email}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg w-fit ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : 'bg-white/5 text-gray-400 border border-white/5'}`}>
+                                                    {user.role}
+                                                </div>
+                                            </td>
+                                            <td className="p-6" onClick={e => e.stopPropagation()}>
+                                                {(() => {
+                                                    const isActive = user.account_is_active === 1 || user.account_is_active === true || user.is_active;
+                                                    return (
+                                                        <div className="relative flex items-center bg-gray-900/80 rounded-xl border border-white/6 p-0.5 w-fit shadow-inner">
+                                                            {/* Sliding highlight */}
+                                                            <div
+                                                                className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive
+                                                                    ? 'left-0.5 bg-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.5)]'
+                                                                    : 'left-[calc(50%+1px)] bg-gray-700'
+                                                                    }`}
+                                                            />
+                                                            {/* Active button */}
+                                                            {/* Active button */}
+                                                            <button
+                                                                onClick={() => handleStatusChange(user, 1)}
+                                                                className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${isActive ? 'text-black' : `${textMuted} hover:text-white`}`}
+                                                            >
+                                                                Active
+                                                            </button>
+                                                            {/* Inactive button */}
+                                                            <button
+                                                                onClick={() => handleStatusChange(user, 0)}
+                                                                className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${!isActive ? (isDark ? 'text-white' : 'text-black') : `${textMuted} hover:text-white`}`}
+                                                            >
+                                                                Inactive
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-2">
+                                                    {user.payment_status ? (
+                                                        <div className="flex items-center gap-1.5 text-lime-400 bg-lime-400/10 px-2.5 py-1 rounded-md text-xs font-bold border border-lime-400/20 shadow-[0_0_10px_rgba(163,230,53,0.05)]">
+                                                            <CheckCircle2 size={12} />
+                                                            Paid
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`flex items-center gap-1.5 ${textSub} bg-gray-800/50 px-2.5 py-1 rounded-md text-xs font-bold border ${borderColor}`}>
+                                                            Unpaid
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="p-6 text-right">
+                                                <button className={`p-2 ${textMuted} hover:text-lime-400 transition-colors rounded-xl hover:bg-lime-400/10 hover:scale-110`}>
+                                                    <ArrowUpRight size={20} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {filteredUsers.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className={`p-10 text-center ${textMuted} font-bold`}>
+                                                No users found matching the criteria.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                        </div>
+                    ) : view === 'posts' ? (
+                        <div className="w-full animate-slide-up">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Community Content</h2>
+                            <p className={`${textMuted} text-sm mt-1`}>{posts.length} posts actively monitored.</p>
+                        </div>
+                        <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold transition-all border shadow-xl`} onClick={() => {
+                            /* Force refresh */
+                            setIsLoadingPosts(true);
+                            getAllPosts().then(res => {
+                                console.log('[Posts Refresh] API Response:', res);
+                                const rawPosts = Array.isArray(res?.posts) ? res.posts
+                                    : Array.isArray(res?.data) ? res.data
+                                        : Array.isArray(res) ? res
+                                            : [];
+                                setPosts(rawPosts);
+                                setIsLoadingPosts(false);
+                            });
+                        }}>
+                            <Clock size={18} />
+                            <span className="text-sm">Refresh Feed</span>
+                        </button>
+                    </div>
+
+                    {isLoadingPosts ? (
+                        <div className="flex flex-col items-center justify-center p-20 gap-4">
+                            <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                            <p className="text-gray-500 font-bold italic tracking-tighter">Loading all posts...</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredPosts.map((post, idx) => (
+                                <div
+                                    key={post.post_id}
+                                    className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
+                                    style={{ animationDelay: `${idx * 0.05}s` }}
+                                >
+                                    {/* Media */}
+                                    <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
+                                        {post.media_url ? (
+                                            <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
+                                        )}
+
+                                        {/* Delete Overlay Button */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeletePost(post.post_id);
+                                            }}
+                                            disabled={isDeletingPost === post.post_id}
+                                            className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
+                                            title="Delete Post"
+                                        >
+                                            {isDeletingPost === post.post_id ? (
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <Trash2 size={16} />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-5 flex-1 flex flex-col">
+                                        {/* Author */}
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden shrink-0 border border-white/10">
+                                                {post.user?.image ? (
+                                                    <img src={resolveImageUrl(post.user.image) || ''} alt={post.user.username} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-xs">👤</div>
+                                                )}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className={`text-sm font-bold ${text} truncate group-hover:text-lime-400 transition-colors`}>
+                                                    {post.user?.username || 'Unknown User'}
+                                                </div>
+                                                <div className={`text-[10px] ${textMuted} truncate`}>
+                                                    {new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Text Content */}
+                                        <p className={`${textSub} text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:${text} transition-colors`}>
+                                            {post.content || <span className={`${textMuted} italic`}>No text content</span>}
+                                        </p>
+
+                                        {/* Stats Footer */}
+                                        <div className={`pt-4 mt-auto border-t ${borderColor} flex items-center justify-between text-xs ${textSub} font-bold uppercase tracking-wider`}>
+                                            <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                <span className="text-lime-400">♥</span> {post.like_count}
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                <span className="text-blue-400">💬</span> {post.comment_count}
+                                            </div>
+                                            <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                <span className="text-purple-400">↗</span> {post.share_count}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {!isLoadingPosts && filteredPosts.length === 0 && (
+                        <div className={`p-20 text-center glass rounded-[2rem] border border-dashed ${borderColor} mt-10`}>
+                            <ImageIcon size={48} className={`mx-auto ${textSub} mb-4 opacity-20`} />
+                            <p className={`${textMuted} font-bold italic tracking-tighter`}>No posts found.</p>
+                        </div>
+                    )}
+                    </div>
+                    ) : view === 'menu' ? (
+                        <div className="w-full animate-slide-up">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Unpaid Access Control</h2>
+                            <p className={`${textMuted} text-sm mt-1`}>{menuItems.length} menu mappings configured.</p>
+                        </div>
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-lime-400 hover:bg-lime-300 text-black px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                        >
+                            <span className="text-lg leading-none">+</span> Add Access
+                        </button>
+                    </div>
+
+                    {/* Table */}
+                    <div className="glass-card rounded-[2rem] overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className={`border-b ${borderColor} ${theadBg}`}>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>ID</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>Menu</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest`}>Submenu</th>
+                                        <th className={`p-6 text-[10px] font-black uppercase ${textMuted} tracking-widest text-right`}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className={`divide-y ${divideColor}`}>
+                                    {isLoadingMenu ? (
+                                        <tr>
+                                            <td colSpan={4} className="p-10 text-center">
+                                                <div className="w-8 h-8 mx-auto border-2 border-lime-400/20 border-t-lime-400 rounded-full animate-spin mb-3"></div>
+                                                <p className="text-gray-500 font-bold italic tracking-tighter text-sm">Loading access mappings...</p>
+                                            </td>
+                                        </tr>
+                                    ) : menuItems.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="p-10 text-center">
+                                                <LayoutList size={32} className="mx-auto text-gray-700 mb-4 opacity-20" />
+                                                <p className="text-gray-500 font-bold italic tracking-tighter text-sm">No mappings found.</p>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        menuItems.map((item, idx) => (
+                                            <tr
+                                                key={item.id}
+                                                className={`group ${rowHover} transition-colors animate-fade-in`}
+                                                style={{ animationDelay: `${idx * 0.05}s` }}
+                                            >
+                                                <td className="p-6">
+                                                    <div className="text-sm font-bold text-gray-400">#{item.id}</div>
+                                                </td>
+                                                <td className="p-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 overflow-hidden">
+                                                            {item.menu_image ? (
+                                                                <img src={resolveImageUrl(item.menu_image) || ''} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <Layers size={18} className="text-gray-500" />
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className={`font-bold ${text} group-hover:text-lime-400 transition-colors`}>{item.menu_name || 'Unknown'}</div>
+                                                            <div className={`text-[10px] ${textMuted} uppercase tracking-widest mt-0.5`}>Menu ID: {item.menu_id}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-6">
+                                                    {item.submenu_id ? (
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-black/30 border border-white/5 flex items-center justify-center text-sm shadow-inner overflow-hidden">
+                                                                {item.submenu_image ? (
+                                                                    <img src={resolveImageUrl(item.submenu_image) || ''} alt="" className="w-full h-full object-cover" />
                                                                 ) : (
-                                                                    <span>👤</span>
+                                                                    <span className="text-gray-600">-</span>
                                                                 )}
                                                             </div>
                                                             <div>
-                                                                <div className="font-bold flex items-center gap-2 text-white group-hover:text-lime-400 transition-colors">
-                                                                    {user.username || user.name || 'Anonymous'}
-                                                                </div>
-                                                                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                                                    <Mail size={10} />
-                                                                    {user.email}
-                                                                </div>
+                                                                <div className={`font-bold ${text}`}>{item.submenu_name || 'Unknown'}</div>
+                                                                <div className={`text-[10px] ${textMuted} uppercase tracking-widest mt-0.5`}>Sub ID: {item.submenu_id}</div>
                                                             </div>
                                                         </div>
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg w-fit ${user.role === 'admin' ? 'bg-lime-400/10 text-lime-400 border border-lime-400/20' : 'bg-white/5 text-gray-400 border border-white/5'}`}>
-                                                            {user.role}
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-6" onClick={e => e.stopPropagation()}>
-                                                        {(() => {
-                                                            const isActive = user.account_is_active === 1 || user.account_is_active === true || user.is_active;
-                                                            return (
-                                                                <div className="relative flex items-center bg-gray-900/80 rounded-xl border border-white/6 p-0.5 w-fit shadow-inner">
-                                                                    {/* Sliding highlight */}
-                                                                    <div
-                                                                        className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive
-                                                                            ? 'left-0.5 bg-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.5)]'
-                                                                            : 'left-[calc(50%+1px)] bg-gray-700'
-                                                                            }`}
-                                                                    />
-                                                                    {/* Active button */}
-                                                                    <button
-                                                                        onClick={() => handleStatusChange(user, 1)}
-                                                                        className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
-                                                                    >
-                                                                        Active
-                                                                    </button>
-                                                                    {/* Inactive button */}
-                                                                    <button
-                                                                        onClick={() => handleStatusChange(user, 0)}
-                                                                        className={`relative z-10 px-3 py-1 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${!isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                                                                    >
-                                                                        Inactive
-                                                                    </button>
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                    </td>
-                                                    <td className="p-6">
-                                                        <div className="flex items-center gap-2">
-                                                            {user.payment_status ? (
-                                                                <div className="flex items-center gap-1.5 text-lime-400 bg-lime-400/10 px-2.5 py-1 rounded-md text-xs font-bold border border-lime-400/20 shadow-[0_0_10px_rgba(163,230,53,0.05)]">
-                                                                    <CheckCircle2 size={12} />
-                                                                    Paid
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex items-center gap-1.5 text-gray-400 bg-gray-800/50 px-2.5 py-1 rounded-md text-xs font-bold border border-white/5">
-                                                                    Unpaid
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-6 text-right">
-                                                        <button className="p-2 text-gray-500 group-hover:text-lime-400 transition-colors rounded-xl group-hover:bg-lime-400/10 group-hover:scale-110">
-                                                            <ArrowUpRight size={20} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {filteredUsers.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={5} className="p-10 text-center text-gray-500 font-bold">
-                                                        No users found matching the criteria.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    ) : view === 'posts' ? (
-                        <div className="max-w-7xl mx-auto animate-slide-up">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div>
-                                    <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">Community Content</h2>
-                                    <p className="text-gray-500 text-sm mt-1">{posts.length} posts actively monitored.</p>
-                                </div>
-                                <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold transition-all border border-white/10 hover:border-white/20 shadow-xl" onClick={() => {
-                                    /* Force refresh */
-                                    setIsLoadingPosts(true);
-                                    getAllPosts().then(res => {
-                                        console.log('[Posts Refresh] API Response:', res);
-                                        const rawPosts = Array.isArray(res?.posts) ? res.posts
-                                            : Array.isArray(res?.data) ? res.data
-                                                : Array.isArray(res) ? res
-                                                    : [];
-                                        setPosts(rawPosts);
-                                        setIsLoadingPosts(false);
-                                    });
-                                }}>
-                                    <Clock size={18} />
-                                    <span className="text-sm">Refresh Feed</span>
-                                </button>
-                            </div>
-
-                            {isLoadingPosts ? (
-                                <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                    <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                    <p className="text-gray-500 font-bold italic tracking-tighter">Loading all posts...</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {filteredPosts.map((post, idx) => (
-                                        <div
-                                            key={post.post_id}
-                                            className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
-                                            style={{ animationDelay: `${idx * 0.05}s` }}
-                                        >
-                                            {/* Media */}
-                                            <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
-                                                {post.media_url ? (
-                                                    <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
-                                                )}
-
-                                                {/* Delete Overlay Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeletePost(post.post_id);
-                                                    }}
-                                                    disabled={isDeletingPost === post.post_id}
-                                                    className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
-                                                    title="Delete Post"
-                                                >
-                                                    {isDeletingPost === post.post_id ? (
-                                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                                     ) : (
-                                                        <Trash2 size={16} />
+                                                        <div className="text-sm font-bold text-gray-600 italic px-3 py-1.5 rounded-lg bg-white/5 w-fit border border-white/5">No Submenu</div>
                                                     )}
-                                                </button>
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="p-5 flex-1 flex flex-col">
-                                                {/* Author */}
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden shrink-0 border border-white/10">
-                                                        {post.user?.image ? (
-                                                            <img src={resolveImageUrl(post.user.image) || ''} alt={post.user.username} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-xs">👤</div>
-                                                        )}
-                                                    </div>
-                                                    <div className="overflow-hidden">
-                                                        <div className="text-sm font-bold text-white truncate group-hover:text-lime-400 transition-colors">
-                                                            {post.user?.username || 'Unknown User'}
-                                                        </div>
-                                                        <div className="text-[10px] text-gray-500 truncate">
-                                                            {new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Text Content */}
-                                                <p className="text-gray-300 text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:text-white transition-colors">
-                                                    {post.content || <span className="text-gray-600 italic">No text content</span>}
-                                                </p>
-
-                                                {/* Stats Footer */}
-                                                <div className="pt-4 mt-auto border-t border-white/5 flex items-center justify-between text-xs text-gray-400 font-bold uppercase tracking-wider">
-                                                    <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
-                                                        <span className="text-lime-400">♥</span> {post.like_count}
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
-                                                        <span className="text-blue-400">💬</span> {post.comment_count}
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
-                                                        <span className="text-purple-400">↗</span> {post.share_count}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {!isLoadingPosts && filteredPosts.length === 0 && (
-                                <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-10">
-                                    <ImageIcon size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
-                                    <p className="text-gray-500 font-bold italic tracking-tighter">No posts found.</p>
-                                </div>
-                            )}
-                        </div>
-                    ) : view === 'menu' ? (
-                        <div className="max-w-7xl mx-auto animate-slide-up">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                                <div>
-                                    <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">Unpaid Access Control</h2>
-                                    <p className="text-gray-500 text-sm mt-1">{menuItems.length} menu mappings configured.</p>
-                                </div>
-                                <button 
-                                    onClick={() => setIsAddModalOpen(true)}
-                                    className="bg-lime-400 hover:bg-lime-300 text-black px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                                >
-                                    <span className="text-lg leading-none">+</span> Add Access
-                                </button>
-                            </div>
-                            
-                            {/* Table */}
-                            <div className="glass-card rounded-[2rem] overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b border-white/5 bg-white/[0.02]">
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">ID</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Menu</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest">Submenu</th>
-                                                <th className="p-6 text-[10px] font-black uppercase text-gray-500 tracking-widest text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {isLoadingMenu ? (
-                                                <tr>
-                                                    <td colSpan={4} className="p-10 text-center">
-                                                         <div className="w-8 h-8 mx-auto border-2 border-lime-400/20 border-t-lime-400 rounded-full animate-spin mb-3"></div>
-                                                         <p className="text-gray-500 font-bold italic tracking-tighter text-sm">Loading access mappings...</p>
-                                                    </td>
-                                                </tr>
-                                            ) : menuItems.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={4} className="p-10 text-center">
-                                                        <LayoutList size={32} className="mx-auto text-gray-700 mb-4 opacity-20" />
-                                                        <p className="text-gray-500 font-bold italic tracking-tighter text-sm">No mappings found.</p>
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                menuItems.map((item, idx) => (
-                                                    <tr 
-                                                        key={item.id}
-                                                        className="group hover:bg-white/[0.04] transition-colors animate-fade-in"
-                                                        style={{ animationDelay: `${idx * 0.05}s` }}
+                                                </td>
+                                                <td className="p-6 text-right">
+                                                    <button
+                                                        onClick={() => setAccessToRemove(item)}
+                                                        className="p-2 text-gray-600 hover:text-red-400 transition-colors rounded-xl hover:bg-red-500/10 hover:scale-110 inline-flex"
+                                                        title="Remove Access"
                                                     >
-                                                        <td className="p-6">
-                                                            <div className="text-sm font-bold text-gray-400">#{item.id}</div>
-                                                        </td>
-                                                        <td className="p-6">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 overflow-hidden">
-                                                                    {item.menu_image ? (
-                                                                        <img src={resolveImageUrl(item.menu_image) || ''} alt="" className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <Layers size={18} className="text-gray-500" />
-                                                                    )}
-                                                                </div>
-                                                                <div>
-                                                                    <div className="font-bold text-white group-hover:text-lime-400 transition-colors">{item.menu_name || 'Unknown'}</div>
-                                                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Menu ID: {item.menu_id}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="p-6">
-                                                            {item.submenu_id ? (
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-lg bg-black/30 border border-white/5 flex items-center justify-center text-sm shadow-inner overflow-hidden">
-                                                                        {item.submenu_image ? (
-                                                                           <img src={resolveImageUrl(item.submenu_image) || ''} alt="" className="w-full h-full object-cover" />     
-                                                                        ) : (
-                                                                           <span className="text-gray-600">-</span>
-                                                                        )}
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="font-bold text-gray-300">{item.submenu_name || 'Unknown'}</div>
-                                                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Sub ID: {item.submenu_id}</div>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-sm font-bold text-gray-600 italic px-3 py-1.5 rounded-lg bg-white/5 w-fit border border-white/5">No Submenu</div>
-                                                            )}
-                                                        </td>
-                                                        <td className="p-6 text-right">
-                                                            <button 
-                                                                onClick={() => setAccessToRemove(item)}
-                                                                className="p-2 text-gray-600 hover:text-red-400 transition-colors rounded-xl hover:bg-red-500/10 hover:scale-110 inline-flex"
-                                                                title="Remove Access"
-                                                            >
-                                                                <Trash2 size={18} />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Add Access Modal */}
+                    {isAddModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setIsAddModalOpen(false)}></div>
+                            <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-white/10 shadow-2xl overflow-hidden group/modal">
+                                <div className="absolute -right-10 -top-10 w-32 h-32 bg-lime-400/10 rounded-full blur-3xl group-hover/modal:bg-lime-400/20 transition-colors"></div>
+                                <button
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all relative z-10"
+                                >
+                                    <X size={20} />
+                                </button>
+
+                                <h3 className={`text-xl font-black italic uppercase tracking-tight ${text} mb-6 relative z-10 flex items-center gap-3`}>
+                                    <Layers size={20} className="text-lime-400" />
+                                    Add Access
+                                </h3>
+
+                                <div className="space-y-4 relative z-10">
+                                    <div>
+                                        <label className={`text-xs font-bold ${textSub} uppercase tracking-widest mb-1.5 block`}>Menu ID *</label>
+                                        <input
+                                            type="number"
+                                            placeholder="e.g. 1"
+                                            value={newMenuId}
+                                            onChange={e => { setNewMenuId(e.target.value); setAddMenuError(null); }}
+                                            className={`w-full ${inputBg} border ${inputBorder} rounded-xl px-4 py-3 text-sm ${text} placeholder:text-gray-500 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all`}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={`text-xs font-bold ${textSub} uppercase tracking-widest mb-1.5 block`}>Submenu ID (Optional)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="e.g. 2"
+                                            value={newSubmenuId}
+                                            onChange={e => { setNewSubmenuId(e.target.value); setAddMenuError(null); }}
+                                            className={`w-full ${inputBg} border ${inputBorder} rounded-xl px-4 py-3 text-sm ${text} placeholder:text-gray-500 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all`}
+                                        />
+                                    </div>
+
+                                    {addMenuError && (
+                                        <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-fade-in shadow-inner">
+                                            <div className="mt-0.5 rounded-full bg-red-500/20 text-red-500 p-1 shrink-0">
+                                                <Shield size={12} />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-bold text-red-400 mb-0.5 uppercase tracking-wider">Access Denied</div>
+                                                <p className="text-xs text-red-400/80 italic">{addMenuError}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4">
+                                        <button
+                                            disabled={isAddingMenu || !newMenuId.trim()}
+                                            onClick={handleAddAccessMenuItem}
+                                            className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-black px-4 py-3.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(163,230,53,0.2)] active:scale-95 flex items-center justify-center gap-2 border border-lime-400/50"
+                                        >
+                                            {isAddingMenu ? (
+                                                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
+                                            ) : 'Grant Access'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
 
-                            {/* Add Access Modal */}
-                            {isAddModalOpen && (
-                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setIsAddModalOpen(false)}></div>
-                                    <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-white/10 shadow-2xl overflow-hidden group/modal">
-                                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-lime-400/10 rounded-full blur-3xl group-hover/modal:bg-lime-400/20 transition-colors"></div>
-                                        <button
-                                            onClick={() => setIsAddModalOpen(false)}
-                                            className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all relative z-10"
-                                        >
-                                            <X size={20} />
-                                        </button>
-                                        
-                                        <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-6 relative z-10 flex items-center gap-3">
-                                            <Layers size={20} className="text-lime-400" />
-                                            Add Access
-                                        </h3>
-                                        
-                                        <div className="space-y-4 relative z-10">
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Menu ID *</label>
-                                                <input 
-                                                    type="number" 
-                                                    placeholder="e.g. 1" 
-                                                    value={newMenuId}
-                                                    onChange={e => { setNewMenuId(e.target.value); setAddMenuError(null); }}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Submenu ID (Optional)</label>
-                                                <input 
-                                                    type="number" 
-                                                    placeholder="e.g. 2" 
-                                                    value={newSubmenuId}
-                                                    onChange={e => { setNewSubmenuId(e.target.value); setAddMenuError(null); }}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:bg-white/[0.04] transition-all"
-                                                />
-                                            </div>
+                    {/* Delete Confirmation Modal */}
+                    {accessToRemove !== null && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => !isRemovingAccess && setAccessToRemove(null)}></div>
+                            <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] overflow-hidden group/modal text-center">
+                                <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-3xl transition-colors"></div>
 
-                                            {addMenuError && (
-                                                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-fade-in shadow-inner">
-                                                    <div className="mt-0.5 rounded-full bg-red-500/20 text-red-500 p-1 shrink-0">
-                                                        <Shield size={12} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-xs font-bold text-red-400 mb-0.5 uppercase tracking-wider">Access Denied</div>
-                                                        <p className="text-xs text-red-400/80 italic">{addMenuError}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            
-                                            <div className="pt-4">
-                                                <button 
-                                                    disabled={isAddingMenu || !newMenuId.trim()}
-                                                    onClick={handleAddAccessMenuItem}
-                                                    className="w-full bg-lime-400 hover:bg-lime-300 disabled:opacity-50 text-black px-4 py-3.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(163,230,53,0.2)] active:scale-95 flex items-center justify-center gap-2 border border-lime-400/50"
-                                                >
-                                                    {isAddingMenu ? (
-                                                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
-                                                    ) : 'Grant Access'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6 relative z-10 border border-red-500/20 shadow-inner">
+                                    <Trash2 size={24} className={isRemovingAccess ? "animate-bounce" : ""} />
                                 </div>
-                            )}
 
-                            {/* Delete Confirmation Modal */}
-                            {accessToRemove !== null && (
-                                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => !isRemovingAccess && setAccessToRemove(null)}></div>
-                                    <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] overflow-hidden group/modal text-center">
-                                        <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-3xl transition-colors"></div>
-                                        
-                                        <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6 relative z-10 border border-red-500/20 shadow-inner">
-                                            <Trash2 size={24} className={isRemovingAccess ? "animate-bounce" : ""} />
-                                        </div>
-                                        
-                                        <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-2 relative z-10">Remove Access?</h3>
-                                        <p className="text-sm text-gray-400 mb-8 relative z-10">This action cannot be undone. Are you sure you want to permanently delete this menu mapping?</p>
-                                        
-                                        <div className="flex gap-3 relative z-10">
-                                            <button 
-                                                onClick={() => setAccessToRemove(null)}
-                                                disabled={isRemovingAccess}
-                                                className="flex-1 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
-                                            >
-                                                No, Keep It
-                                            </button>
-                                            <button 
-                                                onClick={() => handleRemoveAccessMenuItem(accessToRemove)}
-                                                disabled={isRemovingAccess}
-                                                className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)] active:scale-95 flex items-center justify-center gap-2"
-                                            >
-                                                {isRemovingAccess ? (
-                                                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                                ) : 'Yes, Delete'}
-                                            </button>
-                                        </div>
-                                    </div>
+                                <h3 className={`text-xl font-black italic uppercase tracking-tight ${text} mb-2 relative z-10`}>Remove Access?</h3>
+                                <p className={`text-sm ${textMuted} mb-8 relative z-10`}>This action cannot be undone. Are you sure you want to permanently delete this menu mapping?</p>
+
+                                <div className="flex gap-3 relative z-10">
+                                    <button
+                                        onClick={() => setAccessToRemove(null)}
+                                        disabled={isRemovingAccess}
+                                        className={`flex-1 bg-white/5 hover:bg-white/10 ${text} px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50`}
+                                    >
+                                        No, Keep It
+                                    </button>
+                                    <button
+                                        onClick={() => handleRemoveAccessMenuItem(accessToRemove)}
+                                        disabled={isRemovingAccess}
+                                        className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)] active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        {isRemovingAccess ? (
+                                            <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        ) : 'Yes, Delete'}
+                                    </button>
                                 </div>
-                            )}
+                            </div>
+                        </div>
+                    )}
                         </div>
                     ) : null}
                 </div>
 
                 {/* User Detail Modal */}
                 {selectedUser && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-8">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setSelectedUser(null)}></div>
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setSelectedUser(null)}></div>
 
-                        <div className="relative w-full max-w-4xl max-h-full overflow-y-auto glass-card rounded-[2.5rem] p-8 md:p-10 animate-scale-in border border-white/10 shadow-2xl">
-                            {/* Close btn */}
-                            <button
-                                onClick={() => setSelectedUser(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
-                            >
-                                <X size={24} />
-                            </button>
+                <div className="relative w-full max-w-4xl max-h-full overflow-y-auto glass-card rounded-[2.5rem] p-8 md:p-10 animate-scale-in border border-white/10 shadow-2xl">
+                    {/* Close btn */}
+                    <button
+                        onClick={() => setSelectedUser(null)}
+                        className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
+                    >
+                        <X size={24} />
+                    </button>
 
-                            {/* Header */}
-                            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-10 border-b border-white/10 pb-10 relative">
-                                <div className="absolute -top-10 -left-10 w-40 h-40 bg-lime-400/10 rounded-full blur-3xl pointer-events-none"></div>
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-10 border-b border-white/10 pb-10 relative">
+                        <div className="absolute -top-10 -left-10 w-40 h-40 bg-lime-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <div className="w-32 h-32 rounded-3xl glass-card flex items-center justify-center text-6xl border border-lime-400/30 shadow-[0_0_40px_rgba(163,230,53,0.15)] relative overflow-hidden">
-                                    {selectedUser.image ? (
-                                        <img src={resolveImageUrl(selectedUser.image) || ''} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span>👤</span>
-                                    )}
+                        <div className="w-32 h-32 rounded-3xl glass-card flex items-center justify-center text-6xl border border-lime-400/30 shadow-[0_0_40px_rgba(163,230,53,0.15)] relative overflow-hidden">
+                            {selectedUser.image ? (
+                                <img src={resolveImageUrl(selectedUser.image) || ''} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <span>👤</span>
+                            )}
+                        </div>
+                        <div className="text-center md:text-left flex-1 relative z-10">
+                            <div className="flex flex-col items-center md:items-start">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-4xl font-black italic tracking-tight">{selectedUser.username || selectedUser.name || 'Anonymous User'}</h2>
+                                    <div className={`w-3 h-3 rounded-full ${selectedUser.is_active ? 'bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.6)]' : 'bg-gray-600'}`}></div>
                                 </div>
-                                <div className="text-center md:text-left flex-1 relative z-10">
-                                    <div className="flex flex-col items-center md:items-start">
-                                        <div className="flex items-center gap-3">
-                                            <h2 className="text-4xl font-black italic tracking-tight">{selectedUser.username || selectedUser.name || 'Anonymous User'}</h2>
-                                            <div className={`w-3 h-3 rounded-full ${selectedUser.is_active ? 'bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.6)]' : 'bg-gray-600'}`}></div>
-                                        </div>
-                                        <div className="text-gray-400 text-sm mt-1 flex items-center gap-2 font-medium">
-                                            <Mail size={14} /> {selectedUser.email}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
-                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 shadow-md">
-                                            <Shield size={14} className="text-lime-400" />
-                                            {selectedUser.role}
-                                        </div>
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${selectedUser.payment_status ? 'bg-lime-400/10 border border-lime-400/30 text-lime-400' : 'bg-white/5 border border-white/10 text-gray-400'}`}>
-                                            <CreditCard size={14} />
-                                            {selectedUser.payment_status ? 'Paid Member' : 'Unpaid User'}
-                                        </div>
-                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 shadow-md">
-                                            <Calendar size={14} className="text-blue-400" />
-                                            Joined {new Date(selectedUser.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
+                                <div className="text-gray-400 text-sm mt-1 flex items-center gap-2 font-medium">
+                                    <Mail size={14} /> {selectedUser.email}
                                 </div>
                             </div>
-                            <div className="space-y-12">
-                                {/* Stats Grid */}
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <span>User Activity</span>
-                                    <span className="text-lime-400">& Logs</span>
-                                    <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
-                                </h3>
 
-                                {isLoadingDetails ? (
-                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                        <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                        <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving user ledger...</p>
-                                    </div>
-                                ) : selectedUserDetails ? (
-                                    <>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                                            {/* Today Steps */}
-                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
-                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Clock size={48} /></div>
-                                                <div className="relative z-10">
-                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Clock size={12} /> Today's Steps</div>
-                                                    <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.today_steps || 0}</div>
-                                                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Daily Target: 10,000</div>
-                                                </div>
-                                            </div>
-
-                                            {/* Verification Status */}
-                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
-                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Shield size={48} /></div>
-                                                <div className="relative z-10">
-                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Shield size={12} /> Verification Status</div>
-                                                    <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.user_detail.email_verification_status ? 'Verified' : 'Unverified'}</div>
-                                                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Auth Level 1</div>
-                                                </div>
-                                            </div>
-
-                                            {/* Role */}
-                                            <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-orange-400/30 hover:bg-white/[0.04] transition-all shadow-lg hover:-translate-y-1">
-                                                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 text-orange-400"><Mail size={48} /></div>
-                                                <div className="relative z-10">
-                                                    <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Mail size={12} /> User Role</div>
-                                                    <div className="text-2xl font-black italic tracking-tighter text-white uppercase">{selectedUserDetails.user_detail.role}</div>
-                                                    <div className="text-[10px] bg-orange-400/10 px-2 py-1 rounded mt-3 w-fit text-orange-400 font-bold border border-orange-400/20">System Access</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                            {/* Groups Section */}
-                                            <div className="space-y-6">
-                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                                    <Users size={14} className="text-lime-400" /> Group Memberships
-                                                </h4>
-                                                <div className="glass rounded-4xl overflow-hidden border border-white/5">
-                                                    {selectedUserDetails.groups && selectedUserDetails.groups.length > 0 ? (
-                                                        <div className="divide-y divide-white/5">
-                                                            {selectedUserDetails.groups.map((g: any) => {
-                                                                const groupInfo = g.group || groups.find(group => group.id === g.group_id || group.id === Number(g.group_id));
-                                                                return (
-                                                                    <div key={g.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lime-400 font-black italic overflow-hidden">
-                                                                                {groupInfo?.image ? (
-                                                                                    <img src={resolveImageUrl(groupInfo.image) || ''} alt="" className="w-full h-full object-cover" />
-                                                                                ) : (
-                                                                                    <span>#{g.group_id}</span>
-                                                                                )}
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="text-sm font-bold text-white">{groupInfo?.name || `Group ${g.group_id}`}</div>
-                                                                                <div className="text-[10px] text-gray-500">{g.is_admin ? 'Group Admin' : 'Member'}</div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="text-[10px] text-gray-600 italic">
-                                                                            Joined {new Date(g.created_at).toLocaleDateString()}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No groups assigned.</div>
-                                                    )}
-                                                </div>
-
-                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
-                                                    <Activity size={14} className="text-blue-400" /> Walk History
-                                                </h4>
-                                                <div className="glass rounded-[2rem] overflow-hidden border border-white/5 max-h-[250px] overflow-y-auto">
-                                                    {selectedUserDetails.walk_history && selectedUserDetails.walk_history.length > 0 ? (
-                                                        <div className="divide-y divide-white/5">
-                                                            {selectedUserDetails.walk_history.map((h: any, i: number) => (
-                                                                <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                                                                    <div className="text-sm font-bold text-gray-300">{new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="text-lg font-black italic tracking-tight text-lime-400">{h.total_steps}</div>
-                                                                        <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Steps</div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No steps recorded.</div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Payments Section */}
-                                            <div className="space-y-6">
-                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                                    <CreditCard size={14} className="text-amber-400" /> Payment Ledger
-                                                </h4>
-                                                <div className="glass rounded-4xl overflow-hidden border border-white/5">
-                                                    {selectedUserDetails.payment_history && selectedUserDetails.payment_history.length > 0 ? (
-                                                        <div className="divide-y divide-white/5">
-                                                            {selectedUserDetails.payment_history.map((p: any) => (
-                                                                <div key={p.id} className="p-5 hover:bg-white/5 transition-colors">
-                                                                    <div className="flex justify-between items-start mb-2">
-                                                                        <div className="text-sm font-black italic tracking-tight text-white">{p.amount} {p.currency}</div>
-                                                                        <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${p.status === 'success' ? 'bg-lime-400/10 border-lime-400/20 text-lime-400' : 'bg-red-400/10 border-red-400/20 text-red-400'}`}>
-                                                                            {p.status}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex justify-between items-end">
-                                                                        <div>
-                                                                            <div className="text-[10px] text-gray-600 font-mono">ID: {p.stripe_session_id.substring(0, 15)}...</div>
-                                                                            <div className="text-[10px] text-gray-500 mt-1">Expiry: {new Date(p.expire_date).toLocaleDateString()}</div>
-                                                                        </div>
-                                                                        <div className="text-[10px] text-gray-600 italic">
-                                                                            {new Date(p.created_at).toLocaleDateString()}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No payment history.</div>
-                                                    )}
-                                                </div>
-
-                                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
-                                                    <FileText size={14} className="text-purple-400" /> Community Posts
-                                                </h4>
-                                                <div className="glass rounded-[2rem] overflow-hidden border border-white/5">
-                                                    {(() => {
-                                                        const userPosts = Array.isArray(selectedUserDetails?.community_post?.posts)
-                                                            ? selectedUserDetails.community_post.posts
-                                                            : Array.isArray(selectedUserDetails?.community_post)
-                                                                ? selectedUserDetails.community_post
-                                                                : Array.isArray(selectedUserDetails?.posts)
-                                                                    ? selectedUserDetails.posts
-                                                                    : [];
-
-                                                        return userPosts.length > 0 ? (
-                                                            <div className="p-6 grid grid-cols-4 gap-4">
-                                                                {userPosts.map((post: any) => (
-                                                                    <div key={post.id || post.post_id} className="aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-600 hover:border-purple-400/30 hover:text-purple-400 transition-all cursor-default overflow-hidden group/post relative">
-                                                                        {post.image || post.photo || post.url || post.media_url ? (
-                                                                            <img src={resolveImageUrl(post.image || post.photo || post.url || post.media_url) || ''} alt="" className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
-                                                                        ) : (
-                                                                            <div className="p-2 text-center break-words w-full line-clamp-3">
-                                                                                {post.content ? `"${post.content}"` : `#${post.post_id || post.id}`}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No community posts yet.</div>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="p-20 text-center text-gray-600 text-xs font-bold italic">Select a user to view their records.</div>
-                                )}
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
+                                <div className={`flex items-center gap-2 bg-white/5 border ${borderColor} px-3 py-1.5 rounded-lg text-xs font-bold ${textSub} shadow-md`}>
+                                    <Shield size={14} className="text-lime-400" />
+                                    {selectedUser.role}
+                                </div>
+                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md ${selectedUser.payment_status ? 'bg-lime-400/10 border border-lime-400/30 text-lime-400' : `bg-white/5 border ${borderColor} ${textSub}`}`}>
+                                    <CreditCard size={14} />
+                                    {selectedUser.payment_status ? 'Paid Member' : 'Unpaid User'}
+                                </div>
+                                <div className={`flex items-center gap-2 bg-white/5 border ${borderColor} px-3 py-1.5 rounded-lg text-xs font-bold ${textSub} shadow-md`}>
+                                    <Calendar size={14} className="text-blue-400" />
+                                    Joined {new Date(selectedUser.created_at).toLocaleDateString()}
+                                </div>
                             </div>
                         </div>
                     </div>
-                )}
+                    <div className="space-y-12">
+                        {/* Stats Grid */}
+                        <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                            <span>User Activity</span>
+                            <span className="text-lime-400">& Logs</span>
+                            <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                        </h3>
+
+                        {isLoadingDetails ? (
+                            <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                                <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving user ledger...</p>
+                            </div>
+                        ) : selectedUserDetails ? (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                                    {/* Today Steps */}
+                                    <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                        <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Clock size={48} /></div>
+                                        <div className="relative z-10">
+                                            <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Clock size={12} /> Today's Steps</div>
+                                            <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.today_steps || 0}</div>
+                                            <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Daily Target: 10,000</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Status */}
+                                    <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-lime-400/30 hover:bg-white/5 transition-all shadow-lg hover:-translate-y-1">
+                                        <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300 text-lime-400"><Shield size={48} /></div>
+                                        <div className="relative z-10">
+                                            <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Shield size={12} /> Verification Status</div>
+                                            <div className="text-2xl font-black italic tracking-tighter text-white">{selectedUserDetails.user_detail.email_verification_status ? 'Verified' : 'Unverified'}</div>
+                                            <div className="text-[10px] bg-white/10 px-2 py-1 rounded mt-3 w-fit text-gray-300 font-bold border border-white/5">Auth Level 1</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Role */}
+                                    <div className="glass rounded-2xl p-6 relative overflow-hidden group hover:border-orange-400/30 hover:bg-white/[0.04] transition-all shadow-lg hover:-translate-y-1">
+                                        <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 text-orange-400"><Mail size={48} /></div>
+                                        <div className="relative z-10">
+                                            <div className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2"><Mail size={12} /> User Role</div>
+                                            <div className="text-2xl font-black italic tracking-tighter text-white uppercase">{selectedUserDetails.user_detail.role}</div>
+                                            <div className="text-[10px] bg-orange-400/10 px-2 py-1 rounded mt-3 w-fit text-orange-400 font-bold border border-orange-400/20">System Access</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                    {/* Groups Section */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                            <Users size={14} className="text-lime-400" /> Group Memberships
+                                        </h4>
+                                        <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                            {selectedUserDetails.groups && selectedUserDetails.groups.length > 0 ? (
+                                                <div className="divide-y divide-white/5">
+                                                    {selectedUserDetails.groups.map((g: any) => {
+                                                        const groupInfo = g.group || groups.find(group => group.id === g.group_id || group.id === Number(g.group_id));
+                                                        return (
+                                                            <div key={g.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lime-400 font-black italic overflow-hidden">
+                                                                        {groupInfo?.image ? (
+                                                                            <img src={resolveImageUrl(groupInfo.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <span>#{g.group_id}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="text-sm font-bold text-white">{groupInfo?.name || `Group ${g.group_id}`}</div>
+                                                                        <div className="text-[10px] text-gray-500">{g.is_admin ? 'Group Admin' : 'Member'}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-[10px] text-gray-600 italic">
+                                                                    Joined {new Date(g.created_at).toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No groups assigned.</div>
+                                            )}
+                                        </div>
+
+                                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                            <Activity size={14} className="text-blue-400" /> Walk History
+                                        </h4>
+                                        <div className="glass rounded-[2rem] overflow-hidden border border-white/5 max-h-[250px] overflow-y-auto">
+                                            {selectedUserDetails.walk_history && selectedUserDetails.walk_history.length > 0 ? (
+                                                <div className="divide-y divide-white/5">
+                                                    {selectedUserDetails.walk_history.map((h: any, i: number) => (
+                                                        <div key={i} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                            <div className="text-sm font-bold text-gray-300">{new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="text-lg font-black italic tracking-tight text-lime-400">{h.total_steps}</div>
+                                                                <div className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">Steps</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No steps recorded.</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Payments Section */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                            <CreditCard size={14} className="text-amber-400" /> Payment Ledger
+                                        </h4>
+                                        <div className="glass rounded-4xl overflow-hidden border border-white/5">
+                                            {selectedUserDetails.payment_history && selectedUserDetails.payment_history.length > 0 ? (
+                                                <div className="divide-y divide-white/5">
+                                                    {selectedUserDetails.payment_history.map((p: any) => (
+                                                        <div key={p.id} className="p-5 hover:bg-white/5 transition-colors">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div className="text-sm font-black italic tracking-tight text-white">{p.amount} {p.currency}</div>
+                                                                <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${p.status === 'success' ? 'bg-lime-400/10 border-lime-400/20 text-lime-400' : 'bg-red-400/10 border-red-400/20 text-red-400'}`}>
+                                                                    {p.status}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex justify-between items-end">
+                                                                <div>
+                                                                    <div className="text-[10px] text-gray-600 font-mono">ID: {p.stripe_session_id.substring(0, 15)}...</div>
+                                                                    <div className="text-[10px] text-gray-500 mt-1">Expiry: {new Date(p.expire_date).toLocaleDateString()}</div>
+                                                                </div>
+                                                                <div className="text-[10px] text-gray-600 italic">
+                                                                    {new Date(p.created_at).toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No payment history.</div>
+                                            )}
+                                        </div>
+
+                                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 pt-4">
+                                            <FileText size={14} className="text-purple-400" /> Community Posts
+                                        </h4>
+                                        <div className="glass rounded-[2rem] overflow-hidden border border-white/5">
+                                            {(() => {
+                                                const userPosts = Array.isArray(selectedUserDetails?.community_post?.posts)
+                                                    ? selectedUserDetails.community_post.posts
+                                                    : Array.isArray(selectedUserDetails?.community_post)
+                                                        ? selectedUserDetails.community_post
+                                                        : Array.isArray(selectedUserDetails?.posts)
+                                                            ? selectedUserDetails.posts
+                                                            : [];
+
+                                                return userPosts.length > 0 ? (
+                                                    <div className="p-6 grid grid-cols-4 gap-4">
+                                                        {userPosts.map((post: any) => (
+                                                            <div key={post.id || post.post_id} className="aspect-square bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-600 hover:border-purple-400/30 hover:text-purple-400 transition-all cursor-default overflow-hidden group/post relative">
+                                                                {post.image || post.photo || post.url || post.media_url ? (
+                                                                    <img src={resolveImageUrl(post.image || post.photo || post.url || post.media_url) || ''} alt="" className="w-full h-full object-cover group-hover/post:scale-110 transition-transform duration-500" />
+                                                                ) : (
+                                                                    <div className="p-2 text-center break-words w-full line-clamp-3">
+                                                                        {post.content ? `"${post.content}"` : `#${post.post_id || post.id}`}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-10 text-center text-gray-600 text-xs font-bold italic">No community posts yet.</div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="p-20 text-center text-gray-600 text-xs font-bold italic">Select a user to view their records.</div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
 
                 {/* Group Detail Modal */}
                 {selectedGroup && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-8">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setSelectedGroup(null)}></div>
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setSelectedGroup(null)}></div>
 
-                        <div className="relative w-full max-w-4xl max-h-full overflow-y-auto glass-card rounded-[2.5rem] p-8 md:p-10 animate-scale-in border border-white/10 shadow-2xl flex flex-col">
-                            {/* Close btn */}
-                            <button
-                                onClick={() => setSelectedGroup(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
-                            >
-                                <X size={24} />
-                            </button>
+                <div className="relative w-full max-w-4xl max-h-full overflow-y-auto glass-card rounded-[2.5rem] p-8 md:p-10 animate-scale-in border border-white/10 shadow-2xl flex flex-col">
+                    {/* Close btn */}
+                    <button
+                        onClick={() => setSelectedGroup(null)}
+                        className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
+                    >
+                        <X size={24} />
+                    </button>
 
-                            {/* Header */}
-                            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-10 border-b border-white/10 pb-10 relative shrink-0">
-                                <div className="absolute -top-10 -left-10 w-40 h-40 bg-lime-400/10 rounded-full blur-3xl pointer-events-none"></div>
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-10 border-b border-white/10 pb-10 relative shrink-0">
+                        <div className="absolute -top-10 -left-10 w-40 h-40 bg-lime-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <div className="w-32 h-32 rounded-3xl glass-card flex items-center justify-center text-6xl border border-lime-400/30 shadow-[0_0_40px_rgba(163,230,53,0.15)] relative overflow-hidden shrink-0">
-                                    {selectedGroup.image ? (
-                                        <img src={resolveImageUrl(selectedGroup.image) || ''} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span>👥</span>
-                                    )}
-                                </div>
-                                <div className="text-center md:text-left flex-1 relative z-10">
-                                    <div className="flex flex-col items-center md:items-start">
-                                        <h2 className="text-4xl font-black italic tracking-tight uppercase text-white mb-2">{selectedGroup.name}</h2>
-                                        <p className="text-gray-400 text-sm font-medium italic">"{selectedGroup.description || 'No description provided.'}"</p>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
-                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 shadow-md">
-                                            <Users size={14} className="text-lime-400" />
-                                            {selectedGroup.total_members} Members
-                                        </div>
-                                        <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 shadow-md">
-                                            <Calendar size={14} className="text-blue-400" />
-                                            Created {new Date(selectedGroup.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="w-32 h-32 rounded-3xl glass-card flex items-center justify-center text-6xl border border-lime-400/30 shadow-[0_0_40px_rgba(163,230,53,0.15)] relative overflow-hidden shrink-0">
+                            {selectedGroup.image ? (
+                                <img src={resolveImageUrl(selectedGroup.image) || ''} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <span>👥</span>
+                            )}
+                        </div>
+                        <div className="text-center md:text-left flex-1 relative z-10">
+                            <div className="flex flex-col items-center md:items-start">
+                                <h2 className={`text-4xl font-black italic tracking-tight uppercase ${text} mb-2`}>{selectedGroup.name}</h2>
+                                <p className={`${textMuted} text-sm font-medium italic`}>"{selectedGroup.description || 'No description provided.'}"</p>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3 mb-6">
-                                    <span>Group Members</span>
-                                    <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
-                                </h3>
-
-                                {isLoadingGroupMembers ? (
-                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                        <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                        <p className="text-gray-500 font-bold italic tracking-tighter">Retrieving members list...</p>
-                                    </div>
-                                ) : groupMembers.length > 0 ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {groupMembers.map((member: any) => {
-                                            const u = member.user || member;
-                                            return (
-                                                <div key={member.id} className="glass rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors group cursor-pointer border border-white/5 hover:border-lime-400/30">
-                                                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all shadow-md overflow-hidden shrink-0">
-                                                        {u.image ? (
-                                                            <img src={resolveImageUrl(u.image) || ''} alt="" className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <span>👤</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="overflow-hidden">
-                                                        <div className="font-bold flex items-center gap-2 text-white group-hover:text-lime-400 transition-colors truncate">
-                                                            {u.username || u.name || 'Anonymous'}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1 truncate">
-                                                            <Mail size={10} />
-                                                            {u.email}
-                                                        </div>
-                                                        <div className="mt-2 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md w-fit bg-white/5 text-gray-400 border border-white/5">
-                                                            {member.is_admin ? 'Admin' : (u.role || 'Member')}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="p-20 text-center text-gray-600 text-sm font-bold italic border border-dashed border-white/10 rounded-[2rem] glass">
-                                        No members found in this group yet.
-                                    </div>
-                                )}
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
+                                <div className={`flex items-center gap-2 bg-white/5 border ${borderColor} px-3 py-1.5 rounded-lg text-xs font-bold ${textSub} shadow-md`}>
+                                    <Users size={14} className="text-lime-400" />
+                                    {selectedGroup.total_members} Members
+                                </div>
+                                <div className={`flex items-center gap-2 bg-white/5 border ${borderColor} px-3 py-1.5 rounded-lg text-xs font-bold ${textSub} shadow-md`}>
+                                    <Calendar size={14} className="text-blue-400" />
+                                    Created {new Date(selectedGroup.created_at).toLocaleDateString()}
+                                </div>
                             </div>
                         </div>
                     </div>
-                )}
+
+                    <div className="flex-1 overflow-y-auto">
+                        <h3 className={`text-sm font-black ${textSub} uppercase tracking-[0.2em] flex items-center gap-3 mb-6`}>
+                            <span>Group Members</span>
+                            <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                        </h3>
+
+                        {isLoadingGroupMembers ? (
+                            <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                                <p className={`${textMuted} font-bold italic tracking-tighter`}>Retrieving members list...</p>
+                            </div>
+                        ) : groupMembers.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {groupMembers.map((member: any) => {
+                                    const u = member.user || member;
+                                    return (
+                                        <div key={member.id} className="glass rounded-2xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors group cursor-pointer border border-white/5 hover:border-lime-400/30">
+                                            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all shadow-md overflow-hidden shrink-0">
+                                                {u.image ? (
+                                                    <img src={resolveImageUrl(u.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span>👤</span>
+                                                )}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className={`font-bold flex items-center gap-2 ${text} group-hover:text-lime-400 transition-colors truncate`}>
+                                                    {u.username || u.name || 'Anonymous'}
+                                                </div>
+                                                <div className={`text-xs ${textMuted} flex items-center gap-1 mt-1 truncate`}>
+                                                    <Mail size={10} />
+                                                    {u.email}
+                                                </div>
+                                                <div className={`mt-2 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md w-fit bg-white/5 ${textSub} border border-white/5`}>
+                                                    {member.is_admin ? 'Admin' : (u.role || 'Member')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="p-20 text-center text-gray-600 text-sm font-bold italic border border-dashed border-white/10 rounded-[2rem] glass">
+                                No members found in this group yet.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
 
                 {/* Delete Confirmation Modal */}
                 {postToDelete && (
-                    <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setPostToDelete(null)}></div>
+            <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setPostToDelete(null)}></div>
 
-                        <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
-                            <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-                                <Trash2 size={40} />
-                            </div>
-
-                            <h3 className="text-2xl font-black italic uppercase tracking-tight text-white mb-2">Delete Post?</h3>
-                            <p className="text-gray-400 font-medium mb-8">This action cannot be undone. Once deleted, this post will be permanently removed from the ecosystem.</p>
-
-                            <div className="flex w-full gap-4">
-                                <button
-                                    onClick={() => setPostToDelete(null)}
-                                    className="flex-1 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all border border-white/5 hover:border-white/20 active:scale-95"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    disabled={isDeletingPost !== null}
-                                    className="flex-1 py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isDeletingPost !== null ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            <Trash2 size={18} /> Delete Now
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
+                    <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                        <Trash2 size={40} />
                     </div>
-                )}
+
+                    <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-2`}>Delete Post?</h3>
+                    <p className={`${textMuted} font-medium mb-8`}>This action cannot be undone. Once deleted, this post will be permanently removed from the ecosystem.</p>
+
+                    <div className="flex w-full gap-4">
+                        <button
+                            onClick={() => setPostToDelete(null)}
+                            className={`flex-1 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 ${text} font-bold transition-all border border-white/5 hover:border-white/20 active:scale-95`}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            disabled={isDeletingPost !== null}
+                            className="flex-1 py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isDeletingPost !== null ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <>
+                                    <Trash2 size={18} /> Delete Now
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
             </main>
         </div>
     );
