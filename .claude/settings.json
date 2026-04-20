@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npm run start*)",
+      "Bash(npm run lint*)",
+      "Bash(npm install*)",
+      "Bash(npx *)",
+
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+
+      "Bash(curl *)",
+      "Bash(openssl *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo rm -rf *)",
+      "Bash(> /dev/sda*)",
+      "Bash(mkfs *)",
+      "Bash(dd if=*)",
+      "Bash(sed -i *)",
+      "Bash(find * -exec *)"
+    ]
+  }
+}

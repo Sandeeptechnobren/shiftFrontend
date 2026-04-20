@@ -1,0 +1,61 @@
+# .claudeignore
+# Tells Claude Code which files/directories to skip when reading the codebase.
+# Keeps the context window clean — Claude reads application code, not generated artifacts.
+
+# ── Build output ──────────────────────────────────────────────────────────────
+.next/
+out/
+build/
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Lock files (too large, not useful for understanding code) ─────────────────
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# ── Environment files (secrets) ───────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ── Generated / cache ─────────────────────────────────────────────────────────
+.next/cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Static assets (binary — not useful for code understanding) ────────────────
+public/fonts/
+*.ttf
+*.woff
+*.woff2
+*.eot
+
+# ── Images (binary) ───────────────────────────────────────────────────────────
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.svg
+
+# ── OS / editor artifacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ── Temp / leftover files ─────────────────────────────────────────────────────
+*.tmp
+*.bak
+fix_*.ps1
+fix_*.js
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
