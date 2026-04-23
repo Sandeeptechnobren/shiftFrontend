@@ -220,3 +220,40 @@ export const removeUnpaidAccess = async (payload: { id?: number | string, menu_i
     }
 };
 
+export const getWorkoutVideos = async () => {
+    try {
+        const res = await API.get("/api/admin/videos");
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const uploadWorkoutVideo = async (payload: {
+    title: string;
+    description: string;
+    video_name: string;
+    duration: string;
+    video: File;
+    thumbnail: File;
+}) => {
+    try {
+        const formData = new FormData();
+        formData.append("title", payload.title);
+        formData.append("description", payload.description);
+        formData.append("video_name", payload.video_name);
+        formData.append("duration", payload.duration);
+        formData.append("video", payload.video);
+        formData.append("thumbnail", payload.thumbnail);
+
+        const res = await API.post("/api/admin/workout/upload", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+

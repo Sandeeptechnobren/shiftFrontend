@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Toast from '../components/Toast';
 import {
     Bell,
     ArrowLeft,
@@ -27,7 +28,8 @@ import {
     Sun,
     Moon
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo } from '../service/allApi';
+import { resolveImageUrl } from '../service/APIutils';
 
 // --- Mock Data ---
 
@@ -93,6 +95,20 @@ export default function AdminPanel() {
     const [error, setError] = useState<string | null>(null);
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
+    const [workouts, setWorkouts] = useState<any[]>([]);
+    const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
+
+    // For upload video
+    const [isAddVideoModalOpen, setIsAddVideoModalOpen] = useState(false);
+    const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+    const [newVideoTitle, setNewVideoTitle] = useState('');
+    const [newVideoDescription, setNewVideoDescription] = useState('');
+    const [newVideoName, setNewVideoName] = useState('');
+    const [newVideoDuration, setNewVideoDuration] = useState('');
+    const [newVideoFile, setNewVideoFile] = useState<File | null>(null);
+    const [newThumbnailFile, setNewThumbnailFile] = useState<File | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
     // For add menu
     const [isAddingMenu, setIsAddingMenu] = useState(false);
@@ -244,6 +260,29 @@ export default function AdminPanel() {
         fetchMenuItems();
     }, [view]);
 
+    useEffect(() => {
+        const fetchWorkouts = async () => {
+            if (view !== 'workout_setting') return;
+            setIsLoadingWorkouts(true);
+            try {
+                const res = await getWorkoutVideos();
+                if (res && res.status) {
+                    setWorkouts(res.data || []);
+                } else if (Array.isArray(res)) {
+                    setWorkouts(res);
+                } else if (res && res.data) {
+                    setWorkouts(res.data);
+                }
+            } catch (err) {
+                // console.error('Error fetching workout videos:', err);
+            } finally {
+                setIsLoadingWorkouts(false);
+            }
+        };
+
+        fetchWorkouts();
+    }, [view]);
+
     const handleAddAccessMenuItem = async () => {
         if (!newMenuId.trim()) return;
 
@@ -329,6 +368,54 @@ export default function AdminPanel() {
         }
     };
 
+    const handleUploadVideo = async () => {
+        if (!newVideoTitle.trim() || !newVideoDescription.trim() || !newVideoName.trim() || !newVideoDuration.trim() || !newVideoFile || !newThumbnailFile) {
+            setUploadError('Please fill all fields and select both video and thumbnail.');
+            return;
+        }
+
+        setIsUploadingVideo(true);
+        setUploadError(null);
+        try {
+            const res = await uploadWorkoutVideo({
+                title: newVideoTitle,
+                description: newVideoDescription,
+                video_name: newVideoName,
+                duration: newVideoDuration,
+                video: newVideoFile,
+                thumbnail: newThumbnailFile
+            });
+
+            if (res && (res.status === true || res.success !== false)) {
+                setToast({ message: 'Workout video published successfully!', type: 'success' });
+
+                // Refresh videos
+                const fresh = await getWorkoutVideos();
+                if (fresh) {
+                    const raw = fresh.data || fresh;
+                    setWorkouts(Array.isArray(raw) ? raw : []);
+                }
+
+                // Reset form
+                setNewVideoTitle('');
+                setNewVideoDescription('');
+                setNewVideoName('');
+                setNewVideoDuration('');
+                setNewVideoFile(null);
+                setNewThumbnailFile(null);
+                // Keep form open so user can see the new video added "under"
+            } else {
+                setUploadError(res.message || 'Upload failed.');
+                setToast({ message: res.message || 'Upload failed', type: 'error' });
+            }
+        } catch (err) {
+            setUploadError('Failed to upload video. Please try again.');
+            setToast({ message: 'Server error during upload', type: 'error' });
+        } finally {
+            setIsUploadingVideo(false);
+        }
+    };
+
     const filteredUsers = users.filter(user => {
         const displayName = user.username || user.name || user.email || '';
         const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -347,28 +434,6 @@ export default function AdminPanel() {
         return contentMatch || userMatch;
     });
 
-    const resolveImageUrl = (path: string) => {
-        if (!path) return null;
-
-        // Fix double storage in full URLs returned by backend
-        if (path.startsWith('http')) {
-            return path.replace('/storage/storage/', '/storage/');
-        }
-
-        const baseUrl = 'https://api.easycoders.in/projects/shift_backend/public';
-
-        let finalPath = path.startsWith('/') ? path.slice(1) : path;
-
-        // Fix double storage if provided in relative path
-        finalPath = finalPath.replace(/^storage\/storage\//, 'storage/');
-
-        // Ensure path starts with storage/ if it looks like a relative storage path
-        if (!finalPath.startsWith('storage/')) {
-            finalPath = `storage/${finalPath}`;
-        }
-
-        return `${baseUrl}/${finalPath}`;
-    };
 
     // Theme-aware class helpers
     const bg = isDark ? 'bg-gray-950' : 'bg-gray-50';
@@ -487,10 +552,17 @@ export default function AdminPanel() {
                         <Layers size={20} className={view === 'menu' ? 'text-black' : ''} />
                         <span>Menu Access</span>
                     </button>
+                    <button
+                        onClick={() => { setView('workout_setting'); setSelectedUser(null); setSelectedGroup(null); }}
+                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'workout_setting' ? sidebarBtnActive : sidebarBtnInactive}`}
+                    >
+                        <Activity size={20} className={view === 'workout_setting' ? 'text-black' : ''} />
+                        <span>WorkOut Setting</span>
+                    </button>
                 </nav>
 
                 {/* Theme Toggle Section */}
-                <div className={`rounded-2xl border ${borderColor} p-4 ${isDark ? 'bg-white/[0.02]' : 'bg-black/[0.02]'}`}>
+                {/* <div className={`rounded-2xl border ${borderColor} p-4 ${isDark ? 'bg-white/[0.02]' : 'bg-black/[0.02]'}`}>
                     <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${textMuted} mb-3`}>Theme</p>
                     <div className={`flex items-center gap-2 p-1 rounded-xl ${isDark ? 'bg-gray-900/60' : 'bg-gray-200/60'}`}>
                         <button
@@ -514,7 +586,7 @@ export default function AdminPanel() {
                             <span>Light</span>
                         </button>
                     </div>
-                </div>
+                </div> */}
 
                 <div>
                     <button
@@ -538,14 +610,15 @@ export default function AdminPanel() {
                     </div>
                     <div className="hidden md:block">
                         <h1 className="text-3xl font-black italic tracking-tighter uppercase">
-                            {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : view === 'menu' ? 'Menu Access' : 'Content Moderation'}
+                            {view === 'users' ? 'User Ecosystem' : view === 'admin' ? 'Admin Metrics' : view === 'groups' ? 'Group Network' : view === 'menu' ? 'Menu Access' : view === 'workout_setting' ? 'WorkOut Dynamics' : 'Content Moderation'}
                         </h1>
                         <p className={`${textMuted} text-sm`}>
                             {view === 'users' ? 'Monitor, manage and moderate user activities.' :
                                 view === 'admin' ? 'System-wide administrative overview.' :
                                     view === 'groups' ? 'Orchestrate and oversee all active communities.' :
                                         view === 'menu' ? 'Manage accessible menu items and quick actions.' :
-                                            'Review and manage user-generated posts across the platform.'}
+                                            view === 'workout_setting' ? 'Configure and manage workout video content.' :
+                                                'Review and manage user-generated posts across the platform.'}
                         </p>
                     </div>
 
@@ -1160,6 +1233,242 @@ export default function AdminPanel() {
                                 </div>
                             )}
                         </div>
+                    ) : view === 'workout_setting' ? (
+                        <div className="w-full animate-slide-up">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                <div>
+                                    <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Workout Library</h2>
+                                    <p className={`${textMuted} text-sm mt-1`}>{workouts.length} instructional videos available.</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsAddVideoModalOpen(!isAddVideoModalOpen)}
+                                    className={`${isAddVideoModalOpen ? 'bg-red-500 text-white shadow-red-500/20' : 'bg-lime-400 text-black shadow-lime-400/20'} px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2`}
+                                >
+                                    {isAddVideoModalOpen ? <X size={18} /> : <span className="text-lg leading-none">+</span>}
+                                    <span>{isAddVideoModalOpen ? 'Close Form' : 'Add Video'}</span>
+                                </button>
+                            </div>
+
+                            {/* Inline Add Video Form - "In Top Not In Middle" */}
+                            {isAddVideoModalOpen && (
+                                <div className="mb-12 glass-card rounded-[2.5rem] p-8 md:p-10 animate-fade-in border border-lime-400/20 relative overflow-hidden group/form">
+                                    <div className="absolute -right-20 -top-20 w-64 h-64 bg-lime-400/10 rounded-full blur-[100px] group-hover/form:bg-lime-400/20 transition-all duration-700"></div>
+
+                                    <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-8 relative z-10 flex items-center gap-4`}>
+                                        <div className="w-10 h-10 bg-lime-400/20 rounded-xl flex items-center justify-center text-lime-400 border border-lime-400/20">
+                                            <Activity size={20} />
+                                        </div>
+                                        New Content
+                                    </h3>
+
+                                    <div className="space-y-6 relative z-10">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-6">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Title</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Display title..."
+                                                            value={newVideoTitle}
+                                                            onChange={e => setNewVideoTitle(e.target.value)}
+                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Name</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="e.g. Legs_Day_01"
+                                                            value={newVideoName}
+                                                            onChange={e => setNewVideoName(e.target.value)}
+                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Description</label>
+                                                    <textarea
+                                                        placeholder="Describe the workout..."
+                                                        rows={3}
+                                                        value={newVideoDescription}
+                                                        onChange={e => setNewVideoDescription(e.target.value)}
+                                                        className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all resize-none`}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Duration</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 10:30"
+                                                        value={newVideoDuration}
+                                                        onChange={e => setNewVideoDuration(e.target.value)}
+                                                        className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video File</label>
+                                                        <div className={`relative group/file`}>
+                                                            <input
+                                                                type="file"
+                                                                accept="video/*"
+                                                                onChange={e => setNewVideoFile(e.target.files?.[0] || null)}
+                                                                className="hidden"
+                                                                id="video-upload"
+                                                            />
+                                                            <label
+                                                                htmlFor="video-upload"
+                                                                className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newVideoFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
+                                                            >
+                                                                <div className={`${newVideoFile ? 'text-lime-400' : 'text-gray-600'}`}>
+                                                                    <Activity size={20} />
+                                                                </div>
+                                                                <span className={`text-[9px] font-bold ${newVideoFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
+                                                                    {newVideoFile ? newVideoFile.name : 'Video'}
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Thumbnail</label>
+                                                        <div className={`relative group/file`}>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={e => setNewThumbnailFile(e.target.files?.[0] || null)}
+                                                                className="hidden"
+                                                                id="thumb-upload"
+                                                            />
+                                                            <label
+                                                                htmlFor="thumb-upload"
+                                                                className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newThumbnailFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
+                                                            >
+                                                                <div className={`${newThumbnailFile ? 'text-lime-400' : 'text-gray-600'}`}>
+                                                                    <ImageIcon size={20} />
+                                                                </div>
+                                                                <span className={`text-[9px] font-bold ${newThumbnailFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
+                                                                    {newThumbnailFile ? newThumbnailFile.name : 'Image'}
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {uploadError && (
+                                                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 animate-fade-in">
+                                                        <Shield size={14} className="text-red-500" />
+                                                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">{uploadError}</p>
+                                                    </div>
+                                                )}
+
+                                                <button
+                                                    disabled={isUploadingVideo}
+                                                    onClick={handleUploadVideo}
+                                                    className={`w-full mt-4 ${!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile ? 'bg-gray-800 text-gray-500' : 'bg-lime-400 text-white shadow-[0_10px_30px_rgba(163,230,53,0.2)]'} py-4 rounded-2xl font-black italic uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-3 group/btn animate-scale-in`}
+                                                >
+                                                    {isUploadingVideo ? (
+                                                        <>
+                                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                            <span>Uploading...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>{(!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile) ? 'Complete Fields' : 'Upload Content'}</span>
+                                                            <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Workout List Section - "Add video under" (List appears under the form) */}
+                            <div className="mt-4">
+                                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-10"></div>
+
+                                {isLoadingWorkouts ? (
+                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                        <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                                        <p className="text-gray-500 font-bold italic tracking-tighter text-sm">Synchronizing library...</p>
+                                    </div>
+                                ) : workouts.length === 0 ? (
+                                    <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-4">
+                                        <Activity size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
+                                        <p className="text-gray-500 font-bold italic tracking-tighter">No workout videos found.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
+                                        {[...workouts].reverse().map((video, idx) => (
+                                            <div
+                                                key={video.video_id || idx}
+                                                className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
+                                                style={{ animationDelay: `${idx * 0.05}s` }}
+                                            >
+                                                {/* Thumbnail */}
+                                                <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
+                                                    {video.thumbnail_url || video.thumbnail ? (
+                                                        <img src={resolveImageUrl(video.thumbnail_url || video.thumbnail) || ''} alt={video.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-black text-lime-400/20">
+                                                            <Activity size={48} />
+                                                            <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-600">No Thumbnail</span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-lime-400 border border-lime-400/20 uppercase tracking-widest">
+                                                        Seq: {video.sequence || idx + 1}
+                                                    </div>
+
+                                                    {video.duration && (
+                                                        <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest">
+                                                            {video.duration}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Content */}
+                                                <div className="p-6 flex-1 flex flex-col">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[10px] font-black text-lime-400 uppercase tracking-widest truncate max-w-[150px]">
+                                                            {video.video_name || 'Instructional'}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className={`text-lg font-black italic tracking-tight ${text} mb-3 group-hover:text-lime-400 transition-colors uppercase line-clamp-2`}>
+                                                        {video.title}
+                                                    </h3>
+                                                    <p className={`${textSub} text-xs font-medium leading-relaxed mb-6 line-clamp-3 italic`}>
+                                                        "{video.description}"
+                                                    </p>
+
+                                                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                                                        <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                                                            ID: #{video.video_id || video.id}
+                                                        </div>
+                                                        <div className="flex gap-3">
+                                                            {video.video_url && (
+                                                                <a href={video.video_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:underline">
+                                                                    Watch
+                                                                </a>
+                                                            )}
+                                                            <button className="text-[10px] font-black text-lime-400 uppercase tracking-widest hover:underline">
+                                                                Edit
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     ) : null}
                 </div>
 
@@ -1528,6 +1837,15 @@ export default function AdminPanel() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Global Toast */}
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />
                 )}
             </main>
         </div>
