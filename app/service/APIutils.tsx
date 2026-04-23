@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 
 // Create an Axios instance with a configurable base URL
 export const API = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.easycoders.in/projects/shift_backend/public",
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.buildacademy.io/projects/shift_backend/public",
     headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -139,4 +139,36 @@ export const handleError = (error: unknown) => {
         message: error instanceof Error ? error.message : "An unexpected error occurred",
         status: 0,
     };
+};
+
+/**
+ * Centralized image URL resolver to handle storage paths and domain consistency.
+ */
+export const resolveImageUrl = (path: string | null | undefined): string | null => {
+    if (!path) return null;
+
+    // 1. Fix double storage in the incoming path (happens in some API responses)
+    let cleanPath = path.replace(/\/storage\/storage\//g, '/storage/')
+                        .replace(/^storage\/storage\//, 'storage/');
+    
+    // 2. If it's already a full URL, return it (after prefix fix)
+    if (cleanPath.startsWith('http')) {
+        // Special case: if the existing URL has the old domain, swap it
+        if (cleanPath.includes('api.easycoders.in')) {
+            cleanPath = cleanPath.replace('api.easycoders.in', 'api.buildacademy.io');
+        }
+        return cleanPath;
+    }
+
+    // 3. Construct URL from base
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.buildacademy.io/projects/shift_backend/public";
+    
+    let finalPath = cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath;
+
+    // Ensure common Laravel storage path structure
+    if (!finalPath.startsWith('storage/') && !finalPath.includes('http')) {
+        finalPath = `storage/${finalPath}`;
+    }
+
+    return `${baseUrl}/${finalPath}`;
 };
