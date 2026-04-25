@@ -26,9 +26,14 @@ import {
     TrendingUp,
     LayoutList,
     Sun,
-    Moon
+    Moon,
+    Folder,
+    FolderPlus,
+    FolderCheck,
+    Eye,
+    Play
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
 
 // --- Mock Data ---
@@ -97,6 +102,7 @@ export default function AdminPanel() {
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
     const [workouts, setWorkouts] = useState<any[]>([]);
     const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
+    const [workoutSubView, setWorkoutSubView] = useState('library'); // 'library', 'upload', 'analytics'
 
     // For upload video
     const [isAddVideoModalOpen, setIsAddVideoModalOpen] = useState(false);
@@ -109,6 +115,14 @@ export default function AdminPanel() {
     const [newThumbnailFile, setNewThumbnailFile] = useState<File | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    // For video details
+    const [selectedVideo, setSelectedVideo] = useState<any>(null);
+    const [selectedVideoDetails, setSelectedVideoDetails] = useState<any>(null);
+    const [isLoadingVideoDetails, setIsLoadingVideoDetails] = useState(false);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+    const [videoToMarkTop, setVideoToMarkTop] = useState<any>(null);
+    const [isMarkingTop, setIsMarkingTop] = useState(false);
 
     // For add menu
     const [isAddingMenu, setIsAddingMenu] = useState(false);
@@ -283,6 +297,27 @@ export default function AdminPanel() {
         fetchWorkouts();
     }, [view]);
 
+    useEffect(() => {
+        const fetchVideoData = async () => {
+            if (!selectedVideo?.uuid && !selectedVideo?.video_id) return;
+
+            setIsLoadingVideoDetails(true);
+            setSelectedVideoDetails(null);
+            try {
+                const res = await getVideoDetails(selectedVideo.uuid || selectedVideo.video_id);
+                if (res && res.status) {
+                    setSelectedVideoDetails(res.data || res);
+                }
+            } catch (err) {
+                // console.error('Error fetching video details:', err);
+            } finally {
+                setIsLoadingVideoDetails(false);
+            }
+        };
+
+        fetchVideoData();
+    }, [selectedVideo]);
+
     const handleAddAccessMenuItem = async () => {
         if (!newMenuId.trim()) return;
 
@@ -365,6 +400,51 @@ export default function AdminPanel() {
             alert('Failed to delete the post. Please try again.');
         } finally {
             setIsDeletingPost(null);
+        }
+    };
+
+    const handleVideoStatusUpdate = async (uuid: string, status: 'published' | 'archived') => {
+        setIsUpdatingStatus(status);
+        try {
+            const res = await updateVideoStatus(uuid, status);
+            if (res && res.status) {
+                setToast({ message: `Video ${status} successfully!`, type: 'success' });
+                // Update local state
+                if (selectedVideoDetails && (selectedVideoDetails.uuid === uuid || selectedVideoDetails.video_id === uuid)) {
+                    setSelectedVideoDetails({ ...selectedVideoDetails, status });
+                }
+                setWorkouts(prev => prev.map(v => (v.uuid === uuid || v.video_id === uuid) ? { ...v, status } : v));
+            } else {
+                setToast({ message: res?.message || 'Status update failed', type: 'error' });
+            }
+        } catch (err) {
+            setToast({ message: 'Error updating video status', type: 'error' });
+        } finally {
+            setIsUpdatingStatus(null);
+        }
+    };
+
+    const handleMarkAsTop = async () => {
+        if (!videoToMarkTop) return;
+        setIsMarkingTop(true);
+        try {
+            const uuid = videoToMarkTop.uuid || videoToMarkTop.video_id;
+            const res = await markVideoAsTop(uuid);
+            if (res && res.status) {
+                setToast({ message: 'Video marked as top successfully!', type: 'success' });
+                // Update local state
+                if (selectedVideoDetails && (selectedVideoDetails.uuid === uuid || selectedVideoDetails.video_id === uuid)) {
+                    setSelectedVideoDetails({ ...selectedVideoDetails, is_top: 1 });
+                }
+                setWorkouts(prev => prev.map(v => (v.uuid === uuid || v.video_id === uuid) ? { ...v, is_top: 1 } : v));
+                setVideoToMarkTop(null);
+            } else {
+                setToast({ message: res?.message || 'Failed to mark as top', type: 'error' });
+            }
+        } catch (err) {
+            setToast({ message: 'Error marking video as top', type: 'error' });
+        } finally {
+            setIsMarkingTop(false);
         }
     };
 
@@ -1235,239 +1315,293 @@ export default function AdminPanel() {
                         </div>
                     ) : view === 'workout_setting' ? (
                         <div className="w-full animate-slide-up">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                            {/* Workout Folder Navigation */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
                                 <div>
-                                    <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Workout Library</h2>
-                                    <p className={`${textMuted} text-sm mt-1`}>{workouts.length} instructional videos available.</p>
+                                    <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Workout Dynamics</h2>
+                                    <p className={`${textMuted} text-sm mt-1`}>Manage and organize your instructional content library.</p>
                                 </div>
-                                <button
-                                    onClick={() => setIsAddVideoModalOpen(!isAddVideoModalOpen)}
-                                    className={`${isAddVideoModalOpen ? 'bg-red-500 text-white shadow-red-500/20' : 'bg-lime-400 text-black shadow-lime-400/20'} px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 flex items-center gap-2`}
-                                >
-                                    {isAddVideoModalOpen ? <X size={18} /> : <span className="text-lg leading-none">+</span>}
-                                    <span>{isAddVideoModalOpen ? 'Close Form' : 'Add Video'}</span>
-                                </button>
+                                <div className={`flex gap-3 p-2 rounded-2xl w-fit glass ${isDark ? 'bg-gray-900/50' : 'bg-white/80'} border ${borderColor}`}>
+                                    {[
+                                        { id: 'library', label: 'All Content', icon: <Folder size={18} className="text-lime-400" /> },
+                                        // { id: 'published', label: 'Published', icon: <FolderCheck size={18} className="text-blue-400" /> },
+                                        // { id: 'drafts', label: 'Drafts', icon: <Folder size={18} className="text-amber-400" /> },
+                                        { id: 'upload', label: 'New Asset', icon: <FolderPlus size={18} className="text-purple-400" /> }
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setWorkoutSubView(tab.id)}
+                                            className={`px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center gap-3 ${workoutSubView === tab.id
+                                                ? 'bg-lime-400 text-black shadow-[0_10px_30px_rgba(163,230,53,0.3)] scale-105 border border-lime-400'
+                                                : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5 border border-transparent'
+                                                }`}
+                                        >
+                                            {workoutSubView === tab.id ? React.cloneElement(tab.icon as React.ReactElement<any>, { className: 'text-black' }) : tab.icon}
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Inline Add Video Form - "In Top Not In Middle" */}
-                            {isAddVideoModalOpen && (
-                                <div className="mb-12 glass-card rounded-[2.5rem] p-8 md:p-10 animate-fade-in border border-lime-400/20 relative overflow-hidden group/form">
-                                    <div className="absolute -right-20 -top-20 w-64 h-64 bg-lime-400/10 rounded-full blur-[100px] group-hover/form:bg-lime-400/20 transition-all duration-700"></div>
+                            {workoutSubView === 'upload' ? (
+                                <div className="animate-fade-in">
+                                    <div className="glass-card rounded-[2.5rem] p-8 md:p-10 border border-lime-400/20 relative overflow-hidden group/form">
+                                        <div className="absolute -right-20 -top-20 w-64 h-64 bg-lime-400/10 rounded-full blur-[100px] group-hover/form:bg-lime-400/20 transition-all duration-700"></div>
 
-                                    <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-8 relative z-10 flex items-center gap-4`}>
-                                        <div className="w-10 h-10 bg-lime-400/20 rounded-xl flex items-center justify-center text-lime-400 border border-lime-400/20">
-                                            <Activity size={20} />
-                                        </div>
-                                        New Content
-                                    </h3>
-
-                                    <div className="space-y-6 relative z-10">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-6">
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Title</label>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Display title..."
-                                                            value={newVideoTitle}
-                                                            onChange={e => setNewVideoTitle(e.target.value)}
-                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Name</label>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="e.g. Legs_Day_01"
-                                                            value={newVideoName}
-                                                            onChange={e => setNewVideoName(e.target.value)}
-                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Description</label>
-                                                    <textarea
-                                                        placeholder="Describe the workout..."
-                                                        rows={3}
-                                                        value={newVideoDescription}
-                                                        onChange={e => setNewVideoDescription(e.target.value)}
-                                                        className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all resize-none`}
-                                                    />
-                                                </div>
+                                        <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-8 relative z-10 flex items-center gap-4`}>
+                                            <div className="w-10 h-10 bg-lime-400/20 rounded-xl flex items-center justify-center text-lime-400 border border-lime-400/20">
+                                                <Activity size={20} />
                                             </div>
+                                            Publish New Content
+                                        </h3>
 
-                                            <div className="space-y-6">
-                                                <div>
-                                                    <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Duration</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="e.g. 10:30"
-                                                        value={newVideoDuration}
-                                                        onChange={e => setNewVideoDuration(e.target.value)}
-                                                        className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video File</label>
-                                                        <div className={`relative group/file`}>
+                                        <div className="space-y-6 relative z-10">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-6">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Title</label>
                                                             <input
-                                                                type="file"
-                                                                accept="video/*"
-                                                                onChange={e => setNewVideoFile(e.target.files?.[0] || null)}
-                                                                className="hidden"
-                                                                id="video-upload"
+                                                                type="text"
+                                                                placeholder="Display title..."
+                                                                value={newVideoTitle}
+                                                                onChange={e => setNewVideoTitle(e.target.value)}
+                                                                className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
                                                             />
-                                                            <label
-                                                                htmlFor="video-upload"
-                                                                className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newVideoFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
-                                                            >
-                                                                <div className={`${newVideoFile ? 'text-lime-400' : 'text-gray-600'}`}>
-                                                                    <Activity size={20} />
-                                                                </div>
-                                                                <span className={`text-[9px] font-bold ${newVideoFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
-                                                                    {newVideoFile ? newVideoFile.name : 'Video'}
-                                                                </span>
-                                                            </label>
+                                                        </div>
+                                                        <div>
+                                                            <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video Name</label>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="e.g. Legs_Day_01"
+                                                                value={newVideoName}
+                                                                onChange={e => setNewVideoName(e.target.value)}
+                                                                className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-4 py-3.5 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
+                                                            />
                                                         </div>
                                                     </div>
-
                                                     <div>
-                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Thumbnail</label>
-                                                        <div className={`relative group/file`}>
-                                                            <input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                onChange={e => setNewThumbnailFile(e.target.files?.[0] || null)}
-                                                                className="hidden"
-                                                                id="thumb-upload"
-                                                            />
-                                                            <label
-                                                                htmlFor="thumb-upload"
-                                                                className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newThumbnailFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
-                                                            >
-                                                                <div className={`${newThumbnailFile ? 'text-lime-400' : 'text-gray-600'}`}>
-                                                                    <ImageIcon size={20} />
-                                                                </div>
-                                                                <span className={`text-[9px] font-bold ${newThumbnailFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
-                                                                    {newThumbnailFile ? newThumbnailFile.name : 'Image'}
-                                                                </span>
-                                                            </label>
-                                                        </div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Description</label>
+                                                        <textarea
+                                                            placeholder="Describe the workout..."
+                                                            rows={3}
+                                                            value={newVideoDescription}
+                                                            onChange={e => setNewVideoDescription(e.target.value)}
+                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all resize-none`}
+                                                        />
                                                     </div>
                                                 </div>
 
-                                                {uploadError && (
-                                                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 animate-fade-in">
-                                                        <Shield size={14} className="text-red-500" />
-                                                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">{uploadError}</p>
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Duration</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="e.g. 10:30"
+                                                            value={newVideoDuration}
+                                                            onChange={e => setNewVideoDuration(e.target.value)}
+                                                            className={`w-full ${inputBg} border ${inputBorder} rounded-2xl px-5 py-4 text-sm ${text} placeholder:text-gray-600 outline-none focus:border-lime-400/40 focus:ring-4 focus:ring-lime-400/5 transition-all`}
+                                                        />
                                                     </div>
-                                                )}
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Video File</label>
+                                                            <div className={`relative group/file`}>
+                                                                <input
+                                                                    type="file"
+                                                                    accept="video/*"
+                                                                    onChange={e => setNewVideoFile(e.target.files?.[0] || null)}
+                                                                    className="hidden"
+                                                                    id="video-upload"
+                                                                />
+                                                                <label
+                                                                    htmlFor="video-upload"
+                                                                    className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newVideoFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
+                                                                >
+                                                                    <div className={`${newVideoFile ? 'text-lime-400' : 'text-gray-600'}`}>
+                                                                        <Activity size={20} />
+                                                                    </div>
+                                                                    <span className={`text-[9px] font-bold ${newVideoFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
+                                                                        {newVideoFile ? newVideoFile.name : 'Video'}
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
 
-                                                <button
-                                                    disabled={isUploadingVideo}
-                                                    onClick={handleUploadVideo}
-                                                    className={`w-full mt-4 ${!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile ? 'bg-gray-800 text-gray-500' : 'bg-lime-400 text-white shadow-[0_10px_30px_rgba(163,230,53,0.2)]'} py-4 rounded-2xl font-black italic uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-3 group/btn animate-scale-in`}
-                                                >
-                                                    {isUploadingVideo ? (
-                                                        <>
-                                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                            <span>Uploading...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span>{(!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile) ? 'Complete Fields' : 'Upload Content'}</span>
-                                                            <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                                        </>
+                                                        <div>
+                                                            <label className={`text-[10px] font-black ${textSub} uppercase tracking-[0.2em] mb-2 block ml-1`}>Thumbnail</label>
+                                                            <div className={`relative group/file`}>
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={e => setNewThumbnailFile(e.target.files?.[0] || null)}
+                                                                    className="hidden"
+                                                                    id="thumb-upload"
+                                                                />
+                                                                <label
+                                                                    htmlFor="thumb-upload"
+                                                                    className={`flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed ${newThumbnailFile ? 'border-lime-400/40 bg-lime-400/5' : 'border-white/10 hover:border-lime-400/30'} cursor-pointer transition-all h-[100px] group-hover/file:bg-white/[0.02]`}
+                                                                >
+                                                                    <div className={`${newThumbnailFile ? 'text-lime-400' : 'text-gray-600'}`}>
+                                                                        <ImageIcon size={20} />
+                                                                    </div>
+                                                                    <span className={`text-[9px] font-bold ${newThumbnailFile ? 'text-lime-400' : 'text-gray-500'} uppercase tracking-widest text-center truncate w-full px-2`}>
+                                                                        {newThumbnailFile ? newThumbnailFile.name : 'Image'}
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {uploadError && (
+                                                        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 animate-fade-in">
+                                                            <Shield size={14} className="text-red-500" />
+                                                            <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider">{uploadError}</p>
+                                                        </div>
                                                     )}
-                                                </button>
+
+                                                    <button
+                                                        disabled={isUploadingVideo}
+                                                        onClick={handleUploadVideo}
+                                                        className={`w-full mt-4 ${!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile ? 'bg-gray-800 text-gray-500' : 'bg-lime-400 text-white shadow-[0_10px_30px_rgba(163,230,53,0.2)]'} py-4 rounded-2xl font-black italic uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-3 group/btn animate-scale-in`}
+                                                    >
+                                                        {isUploadingVideo ? (
+                                                            <>
+                                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                                <span>Uploading...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <span>{(!newVideoTitle || !newVideoDescription || !newVideoFile || !newThumbnailFile) ? 'Complete Fields' : 'Upload Content'}</span>
+                                                                <ArrowUpRight size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            ) : workoutSubView === 'library' || workoutSubView === 'published' || workoutSubView === 'drafts' ? (
+                                <div className="animate-fade-in">
+                                    <div className="glass-card rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl relative">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-lime-400/[0.02] to-transparent pointer-events-none"></div>
+                                        <div className="overflow-x-auto relative z-10">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className={`border-b ${borderColor} ${theadBg}`}>
+                                                        <th className={`p-8 text-[10px] font-black uppercase ${textMuted} tracking-[0.3em]`}>Thumbnail</th>
+                                                        {/* <th className={`p-8 text-[10px] font-black uppercase ${textMuted} tracking-[0.3em]`}>Name</th> */}
+
+                                                        <th className={`p-8 text-[10px] font-black uppercase ${textMuted} tracking-[0.3em]`}>Status</th>
+                                                        <th className={`p-8 text-[10px] font-black uppercase ${textMuted} tracking-[0.3em]`}>Runtime</th>
+                                                        <th className={`p-8 text-[10px] font-black uppercase ${textMuted} tracking-[0.3em]`}>Top</th>
+
+                                                        <th className="p-8">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className={`divide-y ${divideColor}`}>
+                                                    {isLoadingWorkouts ? (
+                                                        <tr>
+                                                            <td colSpan={5} className="p-32 text-center">
+                                                                <div className="w-16 h-16 mx-auto border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin mb-6"></div>
+                                                                <p className="text-gray-500 font-black italic uppercase tracking-[0.4em] text-[10px]">Synchronizing Digital Library...</p>
+                                                            </td>
+                                                        </tr>
+                                                    ) : workouts.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={5} className="p-32 text-center">
+                                                                <div className="relative w-24 h-24 mx-auto mb-8">
+                                                                    <div className="absolute inset-0 bg-lime-400/10 blur-2xl rounded-full animate-pulse"></div>
+                                                                    <Folder size={64} className="relative mx-auto text-gray-800 opacity-30" />
+                                                                </div>
+                                                                <p className="text-gray-500 font-black italic tracking-widest uppercase text-xs">Directory Empty</p>
+                                                                <p className={`${textSub} text-[10px] mt-2 italic uppercase tracking-widest`}>No content matching the current filter.</p>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        [...workouts]
+                                                            .filter(v => {
+                                                                if (workoutSubView === 'published') return true;
+                                                                if (workoutSubView === 'drafts') return false;
+                                                                return true;
+                                                            })
+                                                            .reverse()
+                                                            .map((video, idx) => (
+                                                                <tr
+                                                                    key={video.uuid || video.video_id || idx}
+                                                                    className={`group ${rowHover} transition-all duration-500 animate-fade-in cursor-default`}
+                                                                    style={{ animationDelay: `${idx * 0.04}s` }}
+                                                                >
+                                                                    <td className="p-8">
+                                                                        <div className="w-24 h-16 rounded-2xl bg-black border border-white/10 relative overflow-hidden shrink-0 group-hover:border-lime-400/50 transition-all duration-500 shadow-2xl group-hover:shadow-lime-400/20">
+                                                                            {video.thumbnail_url || video.thumbnail ? (
+                                                                                <img src={resolveImageUrl(video.thumbnail_url || video.thumbnail) || ''} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black text-lime-400/20">
+                                                                                    <Activity size={24} />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+
+                                                                    {/* <td className="p-8">
+                                                                        <div className={`text-sm font-bold ${textSub} line-clamp-1`}>
+                                                                            {video.title}
+                                                                        </div>
+                                                                    </td> */}
+                                                                    <td className="p-8">
+                                                                        <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border w-fit ${video.status === 'published' ? 'bg-lime-400/10 border-lime-400/30 text-lime-400' :
+                                                                            video.status === 'archived' ? 'bg-orange-400/10 border-orange-400/30 text-orange-400' :
+                                                                                'bg-white/5 border-white/10 text-gray-400'
+                                                                            }`}>
+                                                                            {video.status || 'Draft'}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-8">
+                                                                        <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
+                                                                            <Clock size={12} className="text-lime-400" />
+                                                                            {video.duration || '00:00'}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="p-8">
+                                                                        {video.is_top === 1 ? (
+                                                                            <div className="flex items-center gap-1.5 text-lime-400">
+                                                                                <TrendingUp size={14} />
+                                                                                <span className="text-[10px] font-black uppercase tracking-tighter italic">Featured</span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-[10px] font-bold text-gray-600 uppercase italic">Standard</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="p-8 text-right">
+                                                                        <div className="flex items-center justify-middle gap-3">
+                                                                            <button
+                                                                                onClick={() => setSelectedVideo(video)}
+                                                                                className={`p-3 bg-lime-400/10 text-lime-400 hover:bg-lime-400 hover:text-black transition-all rounded-2xl hover:scale-110 border border-lime-400/20 shadow-lg`}
+                                                                                title="View Intelligent Specs"
+                                                                            >
+                                                                                <Eye size={20} />
+                                                                            </button>
+
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-32 text-center glass rounded-[3rem] border border-dashed border-white/10 animate-fade-in relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-lime-400/[0.05] to-transparent"></div>
+                                    <TrendingUp size={80} className="mx-auto text-lime-400/20 mb-8 group-hover:scale-110 transition-transform duration-700" />
+                                    <h3 className={`text-3xl font-black italic uppercase tracking-tighter ${text} mb-4`}>Performance Intelligence</h3>
+                                    <p className={`${textMuted} text-xs font-bold uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed`}>Real-time analytics and user engagement metrics for the video ecosystem are currently synchronizing.</p>
                                 </div>
                             )}
-
-                            {/* Workout List Section - "Add video under" (List appears under the form) */}
-                            <div className="mt-4">
-                                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mb-10"></div>
-
-                                {isLoadingWorkouts ? (
-                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                        <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                        <p className="text-gray-500 font-bold italic tracking-tighter text-sm">Synchronizing library...</p>
-                                    </div>
-                                ) : workouts.length === 0 ? (
-                                    <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-4">
-                                        <Activity size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
-                                        <p className="text-gray-500 font-bold italic tracking-tighter">No workout videos found.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
-                                        {[...workouts].reverse().map((video, idx) => (
-                                            <div
-                                                key={video.video_id || idx}
-                                                className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
-                                                style={{ animationDelay: `${idx * 0.05}s` }}
-                                            >
-                                                {/* Thumbnail */}
-                                                <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
-                                                    {video.thumbnail_url || video.thumbnail ? (
-                                                        <img src={resolveImageUrl(video.thumbnail_url || video.thumbnail) || ''} alt={video.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-black text-lime-400/20">
-                                                            <Activity size={48} />
-                                                            <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-600">No Thumbnail</span>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-lime-400 border border-lime-400/20 uppercase tracking-widest">
-                                                        Seq: {video.sequence || idx + 1}
-                                                    </div>
-
-                                                    {video.duration && (
-                                                        <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white uppercase tracking-widest">
-                                                            {video.duration}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Content */}
-                                                <div className="p-6 flex-1 flex flex-col">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="text-[10px] font-black text-lime-400 uppercase tracking-widest truncate max-w-[150px]">
-                                                            {video.video_name || 'Instructional'}
-                                                        </span>
-                                                    </div>
-                                                    <h3 className={`text-lg font-black italic tracking-tight ${text} mb-3 group-hover:text-lime-400 transition-colors uppercase line-clamp-2`}>
-                                                        {video.title}
-                                                    </h3>
-                                                    <p className={`${textSub} text-xs font-medium leading-relaxed mb-6 line-clamp-3 italic`}>
-                                                        "{video.description}"
-                                                    </p>
-
-                                                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                                                        <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
-                                                            ID: #{video.video_id || video.id}
-                                                        </div>
-                                                        <div className="flex gap-3">
-                                                            {video.video_url && (
-                                                                <a href={video.video_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-blue-400 uppercase tracking-widest hover:underline">
-                                                                    Watch
-                                                                </a>
-                                                            )}
-                                                            <button className="text-[10px] font-black text-lime-400 uppercase tracking-widest hover:underline">
-                                                                Edit
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     ) : null}
                 </div>
@@ -1801,6 +1935,144 @@ export default function AdminPanel() {
                     </div>
                 )}
 
+                {/* Video Detail Modal */}
+                {selectedVideo && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-fade-in" onClick={() => { setSelectedVideo(null); setSelectedVideoDetails(null); }}></div>
+
+                        <div className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden glass-card rounded-[3rem] animate-scale-in border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col">
+                            {/* Close btn */}
+                            <button
+                                onClick={() => { setSelectedVideo(null); setSelectedVideoDetails(null); }}
+                                className="absolute top-8 right-8 p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-20 shadow-xl hover:scale-110 active:scale-95"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
+                                {isLoadingVideoDetails ? (
+                                    <div className="flex flex-col items-center justify-center h-[500px]">
+                                        <div className="w-20 h-20 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin mb-8 shadow-[0_0_30px_rgba(163,230,53,0.2)]"></div>
+                                        <p className="text-gray-500 font-black italic uppercase tracking-[0.4em] text-xs">Decrypting Asset Metadata...</p>
+                                    </div>
+                                ) : selectedVideoDetails ? (
+                                    <div className="space-y-12 animate-fade-in">
+                                        {/* Header / Banner */}
+                                        <div className="relative rounded-[2.5rem] overflow-hidden group/banner aspect-[21/9] border border-white/10 shadow-2xl">
+                                            {selectedVideoDetails.thumbnail_url || selectedVideoDetails.thumbnail ? (
+                                                <img
+                                                    src={resolveImageUrl(selectedVideoDetails.thumbnail_url || selectedVideoDetails.thumbnail) || ''}
+                                                    alt={selectedVideoDetails.title}
+                                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover/banner:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center text-lime-400/10">
+                                                    <Activity size={120} />
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+
+                                            <div className="absolute bottom-8 left-8 right-8">
+                                                <div className="flex flex-wrap items-center gap-3 mb-4">
+                                                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border ${selectedVideoDetails.status === 'published' ? 'bg-lime-400 text-black border-lime-400' : 'bg-orange-500/20 text-orange-400 border-orange-500/30'}`}>
+                                                        {selectedVideoDetails.status}
+                                                    </div>
+                                                    {selectedVideoDetails.is_top === 1 && (
+                                                        <div className="px-4 py-1.5 rounded-full bg-blue-500 text-white text-[10px] font-black uppercase tracking-[0.2em] border border-blue-400 flex items-center gap-2">
+                                                            <TrendingUp size={12} />
+                                                            <span>Top Pick</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 flex items-center gap-2 ml-auto">
+                                                        <Clock size={12} />
+                                                        <span>{selectedVideoDetails.duration}</span>
+                                                    </div>
+                                                </div>
+                                                <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase drop-shadow-2xl line-clamp-2">
+                                                    {selectedVideoDetails.title}
+                                                </h2>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                                            {/* Left Column: Details */}
+                                            <div className="lg:col-span-2 space-y-10">
+                                                <div className="space-y-4">
+                                                    <h3 className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                        <span>Intellectual Manifest</span>
+                                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                                                    </h3>
+                                                    <p className={`text-lg leading-relaxed ${textMuted} font-medium italic`}>
+                                                        "{selectedVideoDetails.description || 'No description provided for this asset.'}"
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Right Column: Meta */}
+                                            {/* <div className="space-y-8">
+                                                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-lime-400/10 to-transparent border border-lime-400/20">
+                                                    <div className="flex items-center gap-3 text-lime-400 mb-2">
+                                                        <Activity size={16} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest italic">System Insight</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-500 font-medium leading-relaxed italic">
+                                                        This content was synchronized with the backend ecosystem on {new Date().toLocaleDateString()}.
+                                                    </p>
+                                                </div>
+                                            </div> */}
+                                        </div>
+
+                                        {/* Action Buttons at the Bottom */}
+                                        <div className="mt-12 flex flex-col md:flex-row gap-4 pt-8 border-t border-white/5">
+                                            <button
+                                                disabled={isUpdatingStatus !== null}
+                                                onClick={() => handleVideoStatusUpdate(
+                                                    selectedVideoDetails.uuid || selectedVideoDetails.video_id,
+                                                    selectedVideoDetails.status === 'published' ? 'archived' : 'published'
+                                                )}
+                                                className={`flex-1 py-4 rounded-2xl font-black italic uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3 border shadow-xl active:scale-[0.98] ${selectedVideoDetails.status === 'published'
+                                                    ? 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500 hover:text-white'
+                                                    : 'bg-lime-400/10 text-lime-400 border-lime-400/20 hover:bg-lime-400 hover:text-black'
+                                                    }`}
+                                            >
+                                                {isUpdatingStatus ? (
+                                                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                ) : selectedVideoDetails.status === 'published' ? (
+                                                    <>
+                                                        <Trash2 size={18} />
+                                                        <span>Archive Content</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle2 size={18} />
+                                                        <span>Publish Content</span>
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            <button
+                                                onClick={() => setVideoToMarkTop(selectedVideoDetails)}
+                                                className={`flex-1 py-4 rounded-2xl font-black italic uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] border ${selectedVideoDetails.is_top === 1 ? 'bg-blue-500 text-white border-blue-400 cursor-default' : 'bg-white text-black hover:bg-lime-400 border-white hover:border-lime-400'}`}
+                                            >
+                                                <TrendingUp size={18} />
+                                                <span>{selectedVideoDetails.is_top === 1 ? 'Marked as Top' : 'Mark as Top'}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-[500px] text-center">
+                                        <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-6">
+                                            <Shield size={40} />
+                                        </div>
+                                        <h3 className="text-xl font-black italic uppercase tracking-tight text-white mb-2">Access Denied</h3>
+                                        <p className="text-gray-500 text-sm max-w-xs font-medium">Unable to retrieve the requested asset details from the encrypted cloud storage.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Delete Confirmation Modal */}
                 {postToDelete && (
                     <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
@@ -1831,6 +2103,44 @@ export default function AdminPanel() {
                                     ) : (
                                         <>
                                             <Trash2 size={18} /> Delete Now
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Mark as Top Confirmation Modal */}
+                {videoToMarkTop && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setVideoToMarkTop(null)}></div>
+
+                        <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.1)] flex flex-col items-center text-center">
+                            <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                                <TrendingUp size={40} />
+                            </div>
+
+                            <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-2`}>Mark as Top?</h3>
+                            <p className={`${textMuted} font-medium mb-8`}>Are you sure you want to mark this video as a top featured workout?</p>
+
+                            <div className="flex w-full gap-4">
+                                <button
+                                    onClick={() => setVideoToMarkTop(null)}
+                                    className={`flex-1 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 ${text} font-bold transition-all border border-white/5 hover:border-white/20 active:scale-95`}
+                                >
+                                    No, Cancel
+                                </button>
+                                <button
+                                    onClick={handleMarkAsTop}
+                                    disabled={isMarkingTop}
+                                    className="flex-1 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isMarkingTop ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 size={18} /> Yes, Mark Top
                                         </>
                                     )}
                                 </button>

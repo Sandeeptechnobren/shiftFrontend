@@ -257,3 +257,30 @@ export const uploadWorkoutVideo = async (payload: {
     }
 };
 
+
+export const getVideoDetails = async (uuid: string) => {
+    try {
+        const res = await API.get(`/api/admin/videosView/${uuid}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const updateVideoStatus = async (uuid: string, status: 'published' | 'archived') => {
+    try {
+        const res = await API.post(`/api/admin/videos/updateStatus/${uuid}`, { status });
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
+export const markVideoAsTop = async (uuid: string) => {
+    try {
+        const res = await API.post(`/api/admin/videos/markAsTop/${uuid}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
