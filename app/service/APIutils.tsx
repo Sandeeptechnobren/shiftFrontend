@@ -61,10 +61,10 @@ API.interceptors.request.use(
             if (token && token !== 'undefined' && token !== 'null') {
                 const cleanToken = token.trim();
                 // Ensure proper 'Bearer ' prefixing
-                const finalToken = cleanToken.toLowerCase().startsWith('bearer ') 
-                    ? `Bearer ${cleanToken.substring(7).trim()}` 
+                const finalToken = cleanToken.toLowerCase().startsWith('bearer ')
+                    ? `Bearer ${cleanToken.substring(7).trim()}`
                     : `Bearer ${cleanToken}`;
-                
+
                 // Use .set() if available (Axios 1.x), else direct assignment
                 if (config.headers && typeof config.headers.set === 'function') {
                     config.headers.set('Authorization', finalToken);
@@ -85,12 +85,12 @@ API.interceptors.response.use(
     (error) => {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
             console.error('[API] 401 Unauthorized - token might be invalid or expired.');
-            
+
             if (typeof window !== "undefined") {
                 // Clear authentication data
                 localStorage.removeItem("authToken");
                 localStorage.removeItem("userRole");
-                
+
                 // Optional: Redirect to login if not already there
                 if (!window.location.pathname.includes('/login')) {
                     // window.location.href = '/login'; 
@@ -149,8 +149,8 @@ export const resolveImageUrl = (path: string | null | undefined): string | null 
 
     // 1. Fix double storage in the incoming path (happens in some API responses)
     let cleanPath = path.replace(/\/storage\/storage\//g, '/storage/')
-                        .replace(/^storage\/storage\//, 'storage/');
-    
+        .replace(/^storage\/storage\//, 'storage/');
+
     // 2. If it's already a full URL, return it (after prefix fix)
     if (cleanPath.startsWith('http')) {
         // Special case: if the existing URL has the old domain, swap it
@@ -162,7 +162,7 @@ export const resolveImageUrl = (path: string | null | undefined): string | null 
 
     // 3. Construct URL from base
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.buildacademy.io/projects/shift_backend/public";
-    
+
     let finalPath = cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath;
 
     // Ensure common Laravel storage path structure

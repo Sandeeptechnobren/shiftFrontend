@@ -53,6 +53,7 @@ export default function LoginPage() {
                 userRole = userRole || 'User';
                 console.log(`[Login] Setting userRole in localStorage: ${userRole}`);
                 localStorage.setItem('userRole', userRole);
+                localStorage.setItem('userEmail', email);
 
                 // Show success message
                 setToast({ message: 'Login successful! Redirecting...', type: 'success' });
