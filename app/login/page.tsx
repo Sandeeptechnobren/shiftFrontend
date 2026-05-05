@@ -61,6 +61,8 @@ export default function LoginPage() {
                 // Redirect based on role after short delay
                 setTimeout(() => {
                     if (userRole === 'Admin') {
+                        // Reset to Dashboard tab on every fresh login
+                        localStorage.setItem('adminView', 'admin');
                         router.push('/admin');
                     } else {
                         router.push('/dashboard');

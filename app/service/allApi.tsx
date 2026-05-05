@@ -152,6 +152,23 @@ export const getAllUsers = async () => {
     }
 };
 
+export const searchUsersAdmin = async (params: { search?: string; payment_status?: string; type?: string; date_from?: string }) => {
+    try {
+        let queryParams = `?type=${params.type || 'users'}`;
+        if (params.search) queryParams += `&search=${encodeURIComponent(params.search)}`;
+        if (params.payment_status && params.payment_status !== 'All') {
+            queryParams += `&payment_status=${params.payment_status.toLowerCase()}`;
+        }
+        if (params.date_from) {
+            queryParams += `&date_from=${encodeURIComponent(params.date_from)}`;
+        }
+        const res = await API.get(`/api/admin/users/search${queryParams}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
 export const getUserDetails = async (id: number | string) => {
     try {
         const res = await API.get(`/api/admin/users/${id}`);
