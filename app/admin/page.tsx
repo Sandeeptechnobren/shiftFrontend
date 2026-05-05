@@ -33,7 +33,7 @@ import {
     Eye,
     Play
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, searchUsersAdmin, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
 
 // --- Mock Data ---
@@ -73,11 +73,22 @@ const ActivityPulse = () => {
 
 export default function AdminPanel() {
     const router = useRouter();
-    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('adminTheme') as 'dark' | 'light') || 'dark';
+        }
+        return 'dark';
+    });
     const isDark = theme === 'dark';
-    const [view, setView] = useState('admin'); // 'users', 'admin', 'groups', or 'posts'
+    const [view, setView] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('adminView') || 'admin';
+        }
+        return 'admin';
+    });
     const [searchTerm, setSearchTerm] = useState('');
     const [userFilter, setUserFilter] = useState('All'); // 'All', 'Paid', 'Unpaid'
+    const [postDateFilter, setPostDateFilter] = useState('');
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [selectedUserDetails, setSelectedUserDetails] = useState<any>(null);
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
@@ -98,12 +109,18 @@ export default function AdminPanel() {
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [adminEmail, setAdminEmail] = useState<string>('');
+    const [adminEmail, setAdminEmail] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('userEmail') || localStorage.getItem('verificationEmail') || '';
+        }
+        return '';
+    });
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
     const [workouts, setWorkouts] = useState<any[]>([]);
     const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
     const [workoutSubView, setWorkoutSubView] = useState('library'); // 'library', 'upload', 'analytics'
+    const [mounted, setMounted] = useState(false);
 
     // For upload video
     const [isAddVideoModalOpen, setIsAddVideoModalOpen] = useState(false);
@@ -134,7 +151,22 @@ export default function AdminPanel() {
     const [newSubmenuId, setNewSubmenuId] = useState('');
     const [addMenuError, setAddMenuError] = useState<string | null>(null);
 
+    // Persist theme to localStorage whenever it changes
     useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminTheme', theme);
+        }
+    }, [theme]);
+
+    // Persist view to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminView', view);
+        }
+    }, [view]);
+
+    useEffect(() => {
+        setMounted(true);
         if (typeof window !== 'undefined') {
             const role = localStorage.getItem('userRole');
             if (role !== 'Admin') {
@@ -187,10 +219,13 @@ export default function AdminPanel() {
                 // Fetch Users List
                 const usersRes = await getAllUsers();
                 if (usersRes && usersRes.success !== false) {
-                    // API specifically returns users array in the 'users' key
-                    const rawUsers = Array.isArray(usersRes.users) ? usersRes.users :
-                        Array.isArray(usersRes.data) ? usersRes.data :
-                            Array.isArray(usersRes) ? usersRes : [];
+                    let rawUsers = [];
+                    if (Array.isArray(usersRes.users)) rawUsers = usersRes.users;
+                    else if (Array.isArray(usersRes.data?.users)) rawUsers = usersRes.data.users;
+                    else if (Array.isArray(usersRes.data?.data)) rawUsers = usersRes.data.data;
+                    else if (Array.isArray(usersRes.data)) rawUsers = usersRes.data;
+                    else if (Array.isArray(usersRes)) rawUsers = usersRes;
+
                     setUsers(rawUsers);
                 }
 
@@ -212,6 +247,8 @@ export default function AdminPanel() {
 
         fetchData();
     }, [router]);
+
+
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -264,13 +301,29 @@ export default function AdminPanel() {
 
             setIsLoadingPosts(true);
             try {
-                const res = await getAllPosts();
-                // console.log('[Posts] API Response:', res);
-                const rawPosts = Array.isArray(res?.posts) ? res.posts
-                    : Array.isArray(res?.data) ? res.data
-                        : Array.isArray(res) ? res
-                            : [];
-                setPosts(rawPosts);
+                const searchRes = await searchUsersAdmin({
+                    search: searchTerm,
+                    type: 'posts',
+                    date_from: postDateFilter
+                });
+
+                if (searchRes && searchRes.success !== false) {
+                    let rawPosts = [];
+                    if (Array.isArray(searchRes.posts)) rawPosts = searchRes.posts;
+                    else if (Array.isArray(searchRes.data?.posts)) rawPosts = searchRes.data.posts;
+                    else if (Array.isArray(searchRes.data?.data)) rawPosts = searchRes.data.data;
+                    else if (Array.isArray(searchRes.data)) rawPosts = searchRes.data;
+                    else if (Array.isArray(searchRes)) rawPosts = searchRes;
+                    else if (searchRes.data && typeof searchRes.data === 'object' && !Array.isArray(searchRes.data)) {
+                        if (searchRes.data.id || searchRes.data.post_id) {
+                            rawPosts = [searchRes.data];
+                        }
+                    } else if (searchRes.id || searchRes.post_id) {
+                        rawPosts = [searchRes];
+                    }
+
+                    setPosts(rawPosts);
+                }
             } catch (err) {
                 // console.error('Error fetching posts:', err);
             } finally {
@@ -278,8 +331,12 @@ export default function AdminPanel() {
             }
         };
 
-        fetchPosts();
-    }, [view]);
+        const timer = setTimeout(() => {
+            fetchPosts();
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm, postDateFilter, view]);
 
     useEffect(() => {
         const fetchMenuItems = async () => {
@@ -525,7 +582,7 @@ export default function AdminPanel() {
     const filteredUsers = users.filter(user => {
         const displayName = user.username || user.name || user.email || '';
         const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchTerm.toLowerCase());
+            user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesFilter = userFilter === 'All' ? true :
             userFilter === 'Paid' ? user.payment_status === true || user.payment_status === 1 :
@@ -534,11 +591,13 @@ export default function AdminPanel() {
         return matchesSearch && matchesFilter;
     });
 
-    const filteredPosts = posts.filter(post => {
-        const contentMatch = post.content?.toLowerCase().includes(searchTerm.toLowerCase());
-        const userMatch = post.user?.username?.toLowerCase().includes(searchTerm.toLowerCase());
-        return contentMatch || userMatch;
+    const filteredGroups = groups.filter(group => {
+        const nameMatch = group.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const descMatch = group.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        return nameMatch || descMatch;
     });
+
+    const filteredPosts = posts;
 
 
     // Theme-aware class helpers
@@ -561,6 +620,8 @@ export default function AdminPanel() {
     const divideColor = isDark ? 'divide-white/5' : 'divide-gray-200';
     const sidebarBtnActive = 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]';
     const sidebarBtnInactive = isDark ? `${textMuted} hover:text-white hover:bg-white/5 hover:scale-[1.02]` : `${textMuted} hover:text-gray-900 hover:bg-black/5 hover:scale-[1.02]`;
+
+    if (!mounted) return null; // Prevent hydration mismatch flicker
 
     return (
         <div className={`min-h-screen ${bg} ${text} font-sans selection:bg-lime-400 selection:text-black flex flex-col md:flex-row h-screen overflow-hidden transition-colors duration-300`}>
@@ -618,7 +679,7 @@ export default function AdminPanel() {
                 {/* Logo zone — same height as header */}
                 <div className={`flex flex-col  px-5 pt-0 pb-0 border-b ${borderColor} shrink-0`}>
                     <div className="w-40 h-24 relative">
-                        <Image src="/logo.png" alt="Logo" fill className="object-contain" />
+                        <Image src="/logo.png" alt="Logo" fill className={`object-contain transition-all ${!isDark ? 'invert' : ''}`} />
                     </div>
                 </div>
 
@@ -850,7 +911,7 @@ export default function AdminPanel() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {groups.map((group, idx) => (
+                                {filteredGroups.map((group, idx) => (
                                     <div
                                         key={group.id}
                                         onClick={() => setSelectedGroup(group)}
@@ -887,7 +948,7 @@ export default function AdminPanel() {
                                 ))}
                             </div>
 
-                            {groups.length === 0 && (
+                            {filteredGroups.length === 0 && (
                                 <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-10">
                                     <Layers size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
                                     <p className="text-gray-500 font-bold italic tracking-tighter">No groups detected in the system.</p>
@@ -1031,7 +1092,25 @@ export default function AdminPanel() {
                                     <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Community Content</h2>
                                     <p className={`${textMuted} text-sm mt-1`}>{posts.length} posts actively monitored.</p>
                                 </div>
-                                <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold transition-all border shadow-xl`} onClick={() => {
+                                <div className="flex items-center gap-3">
+                                    <div className={`flex items-center px-3 py-2 rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-black/10 bg-black/5'}`}>
+                                        <input
+                                            type="date"
+                                            value={postDateFilter}
+                                            onChange={(e) => setPostDateFilter(e.target.value)}
+                                            className={`bg-transparent outline-none text-sm ${text} [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                                            title="Filter by Date"
+                                        />
+                                        {postDateFilter && (
+                                            <button 
+                                                onClick={() => setPostDateFilter('')}
+                                                className={`ml-2 p-1 rounded-full hover:bg-black/10 ${textMuted} hover:text-red-400`}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold transition-all border shadow-xl`} onClick={() => {
                                     /* Force refresh */
                                     setIsLoadingPosts(true);
                                     getAllPosts().then(res => {
@@ -1047,6 +1126,7 @@ export default function AdminPanel() {
                                     <Clock size={18} />
                                     <span className="text-sm">Refresh Feed</span>
                                 </button>
+                                </div>
                             </div>
 
                             {isLoadingPosts ? (
@@ -1316,6 +1396,13 @@ export default function AdminPanel() {
                                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => !isRemovingAccess && setAccessToRemove(null)}></div>
                                     <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] overflow-hidden group/modal text-center">
                                         <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-3xl transition-colors"></div>
+                                        <button
+                                            onClick={() => setAccessToRemove(null)}
+                                            disabled={isRemovingAccess}
+                                            className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                                        >
+                                            <X size={20} />
+                                        </button>
 
                                         <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6 relative z-10 border border-red-500/20 shadow-inner">
                                             <Trash2 size={24} className={isRemovingAccess ? "animate-bounce" : ""} />
@@ -2112,6 +2199,13 @@ export default function AdminPanel() {
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setPostToDelete(null)}></div>
 
                         <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
+                            <button
+                                onClick={() => setPostToDelete(null)}
+                                disabled={isDeletingPost !== null}
+                                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                            >
+                                <X size={20} />
+                            </button>
                             <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                                 <Trash2 size={40} />
                             </div>
@@ -2150,6 +2244,13 @@ export default function AdminPanel() {
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setVideoToMarkTop(null)}></div>
 
                         <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.1)] flex flex-col items-center text-center">
+                            <button
+                                onClick={() => setVideoToMarkTop(null)}
+                                disabled={isMarkingTop}
+                                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                            >
+                                <X size={20} />
+                            </button>
                             <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                                 <TrendingUp size={40} />
                             </div>
