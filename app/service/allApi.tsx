@@ -106,6 +106,21 @@ export const swiftLogin = async (credentials: {
     }
 };
 
+export const getAdminProfile = async () => {
+    try {
+        const res = await API.get("/api/admin/profile");
+        return res.data;
+    } catch (error: unknown) {
+        // fallback: try /api/profile
+        try {
+            const res2 = await API.get("/api/profile");
+            return res2.data;
+        } catch {
+            return handleError(error);
+        }
+    }
+};
+
 export const addNewMessage = async (payload: {
     targetId: number;
     spaceId: number;

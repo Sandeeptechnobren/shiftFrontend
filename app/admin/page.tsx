@@ -33,7 +33,7 @@ import {
     Eye,
     Play
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
 
 // --- Mock Data ---
@@ -75,7 +75,7 @@ export default function AdminPanel() {
     const router = useRouter();
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const isDark = theme === 'dark';
-    const [view, setView] = useState('users'); // 'users', 'admin', 'groups', or 'posts'
+    const [view, setView] = useState('admin'); // 'users', 'admin', 'groups', or 'posts'
     const [searchTerm, setSearchTerm] = useState('');
     const [userFilter, setUserFilter] = useState('All'); // 'All', 'Paid', 'Unpaid'
     const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -98,6 +98,7 @@ export default function AdminPanel() {
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [adminEmail, setAdminEmail] = useState<string>('');
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
     const [workouts, setWorkouts] = useState<any[]>([]);
@@ -141,6 +142,31 @@ export default function AdminPanel() {
                 return;
             }
         }
+
+        // Fetch admin email from API (not localStorage)
+        const fetchAdminEmail = async () => {
+            try {
+                const profileRes = await getAdminProfile();
+                const apiEmail =
+                    profileRes?.email ||
+                    profileRes?.data?.email ||
+                    profileRes?.user?.email ||
+                    profileRes?.data?.user?.email ||
+                    profileRes?.user_data?.email ||
+                    null;
+                if (apiEmail) {
+                    setAdminEmail(apiEmail);
+                } else {
+                    // fallback to localStorage only if API doesn't return email
+                    const stored = localStorage.getItem('userEmail') || localStorage.getItem('verificationEmail') || '';
+                    setAdminEmail(stored);
+                }
+            } catch {
+                const stored = localStorage.getItem('userEmail') || localStorage.getItem('verificationEmail') || '';
+                setAdminEmail(stored);
+            }
+        };
+        fetchAdminEmail();
 
         const fetchData = async () => {
             setError(null);
@@ -588,20 +614,21 @@ export default function AdminPanel() {
             `}</style>
 
             {/* Sidebar */}
-            <aside className={`hidden md:flex flex-col w-72 h-full glass border-r ${borderColor} p-8 gap-10 shrink-0 z-10`}>
-                <div className="flex items-center">
+            <aside className={`hidden md:flex flex-col w-70 h-full glass border-r ${borderColor} shrink-0 z-10`}>
+                {/* Logo zone — same height as header */}
+                <div className={`flex flex-col  px-5 pt-0 pb-0 border-b ${borderColor} shrink-0`}>
                     <div className="w-40 h-24 relative">
                         <Image src="/logo.png" alt="Logo" fill className="object-contain" />
                     </div>
                 </div>
 
-                <nav className="flex flex-col gap-3 flex-1">
+                <nav className="flex flex-col gap-3 flex-1 px-8 pt-6">
                     <button
                         onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Shield size={20} className={view === 'admin' ? 'text-black' : ''} />
-                        <span>Admin</span>
+                        <span>Dashboard</span>
                     </button>
                     <button
                         onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); }}
@@ -668,7 +695,7 @@ export default function AdminPanel() {
                     </div>
                 </div> */}
 
-                <div>
+                <div className="flex flex-col gap-2 px-8 pb-8">
                     <button
                         onClick={() => router.push('/dashboard')}
                         className={`flex items-center gap-4 p-4 w-full rounded-2xl ${textMuted} ${isDark ? 'hover:text-white hover:bg-white/5' : 'hover:text-gray-900 hover:bg-black/5'} transition-all group`}
@@ -676,6 +703,12 @@ export default function AdminPanel() {
                         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Back to App</span>
                     </button>
+                    {adminEmail && (
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl ${isDark ? 'bg-white/[0.03] border border-white/5' : 'bg-black/[0.03] border border-black/5'}`}>
+                            <Mail size={14} className="text-lime-400 shrink-0" />
+                            <span className={`text-xs font-medium truncate ${textMuted}`} title={adminEmail}>{adminEmail}</span>
+                        </div>
+                    )}
                 </div>
             </aside>
 
@@ -966,7 +999,7 @@ export default function AdminPanel() {
                                                                     Paid
                                                                 </div>
                                                             ) : (
-                                                                <div className={`flex items-center gap-1.5 ${textSub} bg-gray-800/50 px-2.5 py-1 rounded-md text-xs font-bold border ${borderColor}`}>
+                                                                <div className={`flex items-center gap-1.5 ${textSub} bg-gray-900 px-2.5 py-1 rounded-md text-xs font-bold border ${borderColor}`}>
                                                                     Unpaid
                                                                 </div>
                                                             )}
