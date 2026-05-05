@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Toast from '../components/Toast';
@@ -11,7 +11,6 @@ import {
     Layers,
     Activity,
     Search,
-    Filter,
     Mail,
     Shield,
     X,
@@ -29,9 +28,8 @@ import {
     Moon,
     Folder,
     FolderPlus,
-    FolderCheck,
     Eye,
-    Play
+    LogOut
 } from 'lucide-react';
 import { getAdminDashboard, getAllUsers, getUserDetails, searchUsersAdmin, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
@@ -142,6 +140,12 @@ export default function AdminPanel() {
     const [videoToMarkTop, setVideoToMarkTop] = useState<any>(null);
     const [isMarkingTop, setIsMarkingTop] = useState(false);
 
+    // Modal closing animation
+    const [closingModal, setClosingModal] = useState<string | null>(null);
+
+    // Profile dropdown
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+
     // For add menu
     const [isAddingMenu, setIsAddingMenu] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -150,6 +154,41 @@ export default function AdminPanel() {
     const [newMenuId, setNewMenuId] = useState('');
     const [newSubmenuId, setNewSubmenuId] = useState('');
     const [addMenuError, setAddMenuError] = useState<string | null>(null);
+
+    // ── Logout ──────────────────────────────────────────────────────────────
+    const handleLogout = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('verificationEmail');
+            localStorage.removeItem('adminView');
+            localStorage.removeItem('adminTheme');
+        }
+        router.replace('/login');
+    }, [router]);
+
+    // ── Modal close helpers ──────────────────────────────────────────────────
+    const closeModal = useCallback((setter: (v: any) => void, resetFn?: () => void) => {
+        setter(null);
+        if (resetFn) resetFn();
+    }, []);
+
+    // ── ESC key to close any open modal ─────────────────────────────────────
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Escape') return;
+            if (selectedUser) { setSelectedUser(null); return; }
+            if (selectedGroup) { setSelectedGroup(null); return; }
+            if (selectedVideo) { setSelectedVideo(null); setSelectedVideoDetails(null); return; }
+            if (postToDelete) { setPostToDelete(null); return; }
+            if (videoToMarkTop) { setVideoToMarkTop(null); return; }
+            if (isAddModalOpen) { setIsAddModalOpen(false); return; }
+            if (accessToRemove) { setAccessToRemove(null); return; }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [selectedUser, selectedGroup, selectedVideo, postToDelete, videoToMarkTop, isAddModalOpen, accessToRemove]);
 
     // Persist theme to localStorage whenever it changes
     useEffect(() => {
@@ -168,9 +207,14 @@ export default function AdminPanel() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('authToken');
             const role = localStorage.getItem('userRole');
+            if (!token) {
+                router.replace('/login');
+                return;
+            }
             if (role !== 'Admin') {
-                router.push('/dashboard');
+                router.replace('/dashboard');
                 return;
             }
         }
@@ -756,19 +800,82 @@ export default function AdminPanel() {
                     </div>
                 </div> */}
 
-                <div className="flex flex-col gap-2 px-8 pb-8">
+                {/* Profile Dropdown */}
+                <div className="px-5   pb-70 relative">
+                    {/* Clickable profile card */}
                     <button
-                        onClick={() => router.push('/dashboard')}
-                        className={`flex items-center gap-4 p-4 w-full rounded-2xl ${textMuted} ${isDark ? 'hover:text-white hover:bg-white/5' : 'hover:text-gray-900 hover:bg-black/5'} transition-all group`}
+                        onClick={() => setShowProfileMenu(v => !v)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-2xl border transition-all duration-200 cursor-pointer ${showProfileMenu
+                            ? isDark ? 'bg-white/10 border-lime-400/30' : 'bg-black/10 border-lime-400/30'
+                            : isDark ? 'bg-white/[0.03] border-white/8 hover:bg-white/8 hover:border-white/15' : 'bg-black/[0.03] border-black/8 hover:bg-black/8 hover:border-black/15'
+                            }`}
                     >
-                        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                        <span>Back to App</span>
-                    </button>
-                    {adminEmail && (
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl ${isDark ? 'bg-white/[0.03] border border-white/5' : 'bg-black/[0.03] border border-black/5'}`}>
-                            <Mail size={14} className="text-lime-400 shrink-0" />
-                            <span className={`text-xs font-medium truncate ${textMuted}`} title={adminEmail}>{adminEmail}</span>
+                        {/* Avatar circle */}
+                        <div className="w-9 h-9 rounded-xl bg-lime-400/20 border border-lime-400/30 flex items-center justify-center shrink-0">
+                            <Shield size={16} className="text-lime-400" />
                         </div>
+                        <div className="flex-1 min-w-0 text-left">
+                            <div className={`text-[10px] font-black uppercase tracking-widest ${textMuted} mb-0.5`}>Admin</div>
+                            <div className={`text-xs font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`} title={adminEmail}>
+                                {adminEmail || 'Administrator'}
+                            </div>
+                        </div>
+                        {/* Chevron */}
+                        <div className={`transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={textMuted}>
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </button>
+
+                    {/* Dropdown menu */}
+                    {showProfileMenu && (
+                        <>
+                            {/* Backdrop to close on outside click */}
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setShowProfileMenu(false)}
+                            />
+                            <div
+                                className={`absolute left-5 right-5 bottom-full mb-2 z-50 rounded-2xl border shadow-2xl overflow-hidden animate-fade-in ${isDark
+                                    ? 'bg-gray-900 border-white/10 shadow-black/60'
+                                    : 'bg-white border-gray-200 shadow-gray-300/60'
+                                    }`}
+                            >
+                                {/* Email header inside dropdown */}
+                                <div className={`px-4 py-3 border-b ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50'
+                                    }`}>
+                                    <div className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${textMuted}`}>Signed in as</div>
+                                    <div className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`} title={adminEmail}>
+                                        {adminEmail || 'Administrator'}
+                                    </div>
+                                </div>
+
+                                {/* Back to App */}
+                                <button
+                                    onClick={() => { setShowProfileMenu(false); router.push('/dashboard'); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${isDark
+                                        ? 'text-gray-300 hover:text-white hover:bg-white/5'
+                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <ArrowLeft size={16} />
+                                    <span>Back to App</span>
+                                </button>
+
+                                {/* Divider */}
+                                <div className={isDark ? 'border-t border-white/5' : 'border-t border-gray-100'} />
+
+                                {/* Logout */}
+                                <button
+                                    onClick={() => { setShowProfileMenu(false); handleLogout(); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/80 transition-colors"
+                                >
+                                    <LogOut size={16} />
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
             </aside>
@@ -1102,7 +1209,7 @@ export default function AdminPanel() {
                                             title="Filter by Date"
                                         />
                                         {postDateFilter && (
-                                            <button 
+                                            <button
                                                 onClick={() => setPostDateFilter('')}
                                                 className={`ml-2 p-1 rounded-full hover:bg-black/10 ${textMuted} hover:text-red-400`}
                                             >
@@ -1111,21 +1218,21 @@ export default function AdminPanel() {
                                         )}
                                     </div>
                                     <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold transition-all border shadow-xl`} onClick={() => {
-                                    /* Force refresh */
-                                    setIsLoadingPosts(true);
-                                    getAllPosts().then(res => {
-                                        console.log('[Posts Refresh] API Response:', res);
-                                        const rawPosts = Array.isArray(res?.posts) ? res.posts
-                                            : Array.isArray(res?.data) ? res.data
-                                                : Array.isArray(res) ? res
-                                                    : [];
-                                        setPosts(rawPosts);
-                                        setIsLoadingPosts(false);
-                                    });
-                                }}>
-                                    <Clock size={18} />
-                                    <span className="text-sm">Refresh Feed</span>
-                                </button>
+                                        /* Force refresh */
+                                        setIsLoadingPosts(true);
+                                        getAllPosts().then(res => {
+                                            console.log('[Posts Refresh] API Response:', res);
+                                            const rawPosts = Array.isArray(res?.posts) ? res.posts
+                                                : Array.isArray(res?.data) ? res.data
+                                                    : Array.isArray(res) ? res
+                                                        : [];
+                                            setPosts(rawPosts);
+                                            setIsLoadingPosts(false);
+                                        });
+                                    }}>
+                                        <Clock size={18} />
+                                        <span className="text-sm">Refresh Feed</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1330,9 +1437,11 @@ export default function AdminPanel() {
                                         <div className="absolute -right-10 -top-10 w-32 h-32 bg-lime-400/10 rounded-full blur-3xl group-hover/modal:bg-lime-400/20 transition-colors"></div>
                                         <button
                                             onClick={() => setIsAddModalOpen(false)}
-                                            className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all relative z-10"
+                                            style={{ transform: 'none' }}
+                                            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10"
                                         >
-                                            <X size={20} />
+                                            <X size={14} />
+                                            <span>Close</span>
                                         </button>
 
                                         <h3 className={`text-xl font-black italic uppercase tracking-tight ${text} mb-6 relative z-10 flex items-center gap-3`}>
@@ -1397,11 +1506,13 @@ export default function AdminPanel() {
                                     <div className="relative w-full max-w-sm glass-card rounded-3xl p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] overflow-hidden group/modal text-center">
                                         <div className="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-3xl transition-colors"></div>
                                         <button
-                                            onClick={() => setAccessToRemove(null)}
+                                            onClick={() => !isRemovingAccess && setAccessToRemove(null)}
                                             disabled={isRemovingAccess}
-                                            className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                                            style={{ transform: 'none' }}
+                                            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <X size={20} />
+                                            <X size={14} />
+                                            <span>Close</span>
                                         </button>
 
                                         <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-6 relative z-10 border border-red-500/20 shadow-inner">
@@ -1735,9 +1846,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => setSelectedUser(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
+                                style={{ transform: 'none' }}
+                                className="absolute top-6 right-6 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-lg"
                             >
-                                <X size={24} />
+                                <X size={16} />
+                                <span>Close</span>
                             </button>
 
                             {/* Header */}
@@ -1970,9 +2083,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => setSelectedGroup(null)}
-                                className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-10 shadow-lg hover:scale-110"
+                                style={{ transform: 'none' }}
+                                className="absolute top-6 right-6 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-lg"
                             >
-                                <X size={24} />
+                                <X size={16} />
+                                <span>Close</span>
                             </button>
 
                             {/* Header */}
@@ -2064,9 +2179,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => { setSelectedVideo(null); setSelectedVideoDetails(null); }}
-                                className="absolute top-8 right-8 p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5 z-20 shadow-xl hover:scale-110 active:scale-95"
+                                style={{ transform: 'none' }}
+                                className="absolute top-8 right-8 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-xl"
                             >
-                                <X size={24} />
+                                <X size={16} />
+                                <span>Close</span>
                             </button>
 
                             <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
@@ -2200,11 +2317,13 @@ export default function AdminPanel() {
 
                         <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
                             <button
-                                onClick={() => setPostToDelete(null)}
+                                onClick={() => isDeletingPost === null && setPostToDelete(null)}
                                 disabled={isDeletingPost !== null}
-                                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                                style={{ transform: 'none' }}
+                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <X size={20} />
+                                <X size={14} />
+                                <span>Close</span>
                             </button>
                             <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                                 <Trash2 size={40} />
@@ -2245,11 +2364,13 @@ export default function AdminPanel() {
 
                         <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.1)] flex flex-col items-center text-center">
                             <button
-                                onClick={() => setVideoToMarkTop(null)}
+                                onClick={() => !isMarkingTop && setVideoToMarkTop(null)}
                                 disabled={isMarkingTop}
-                                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10 disabled:opacity-50"
+                                style={{ transform: 'none' }}
+                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <X size={20} />
+                                <X size={14} />
+                                <span>Close</span>
                             </button>
                             <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                                 <TrendingUp size={40} />
