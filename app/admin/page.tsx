@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Toast from '../components/Toast';
@@ -69,6 +69,45 @@ const ActivityPulse = () => {
     );
 };
 
+// --- Normalize user objects from different API endpoints ---
+// getAllUsers returns flat fields; searchUsersAdmin returns them nested under 'profile'.
+// This helper always produces a flat, consistent shape.
+const normalizeUser = (u: any): any => ({
+    ...u,
+    username: u.username || u.profile?.username || '',
+    name: u.name || u.profile?.name || '',
+    image: u.image || u.profile?.image || null,
+    country_code: u.country_code || u.profile?.country_code || '',
+    gender: u.gender || u.profile?.gender || '',
+    age_range: u.age_range || u.profile?.age_range || '',
+});
+
+const normalizeGroup = (g: any): any => ({
+    ...g,
+    name: g.name || g.group_name || '',
+    description: g.description || g.group_description || '',
+});
+
+const normalizePost = (p: any): any => ({
+    ...p,
+    user: p.user || {
+        username: p.username || 'Unknown User',
+        email: p.email || '',
+        image: p.user_image || null
+    }
+});
+
+const Logo = ({ className }: { className?: string }) => (
+    <svg width="105" height="24" viewBox="0 0 105 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <path d="M16.7567 14.2131L23.258 7.84369V0H15.4252V6.00784C15.4252 6.6519 14.6442 6.97105 14.1941 6.51029L7.83353 0H0V7.84369H6.03181C6.67498 7.84369 6.99369 8.62576 6.53357 9.07646L0.0315839 15.4459V23.2896H7.86512V17.2817C7.86512 16.6377 8.6461 16.3185 9.09617 16.7793L15.4567 23.2896H23.2896V15.4459H17.2585C16.6153 15.4459 16.2966 14.6638 16.7567 14.2131ZM15.4252 15.4459H9.30075C8.50828 15.4459 7.86512 14.8025 7.86512 14.0082V7.84369H13.9766C14.777 7.84369 15.4252 8.4935 15.4252 9.29426V15.4459Z" fill="#C9FC40" />
+        <path className="shift-text" d="M97.4574 21.7775H91.566L93.4353 6.52695H88.3818L89.0135 1.40906H104.999L104.367 6.52695H97.6766L97.6379 6.9137H97.9859C98.3727 6.9137 98.6692 7.03402 98.8755 7.27466C99.0817 7.5067 99.1634 7.8161 99.1204 8.20284L97.4574 21.7775Z" fill="currentColor" />
+        <path className="shift-text" d="M75.6943 1.40906H88.6502L88.0185 6.52695H80.954L80.6575 8.92476H87.4513L86.8196 14.0427H80.0258L79.0847 21.7775H73.1934L75.6943 1.40906Z" fill="currentColor" />
+        <path className="shift-text" d="M69.2236 1.40906H75.0892L72.5883 21.7775H66.7227L69.2236 1.40906Z" fill="currentColor" />
+        <path className="shift-text" d="M51.623 1.40906H57.4886L56.5217 9.25993H61.7943L62.7612 1.40906H68.6268L66.1259 21.7775H60.2603L61.1627 14.3907H55.8901L54.9877 21.7775H49.1221L51.623 1.40906Z" fill="currentColor" />
+        <path className="shift-text" d="M39.9247 21.8806C36.8308 21.8806 34.7209 21.481 33.595 20.6817C32.4692 19.8739 31.9062 18.4902 31.9062 16.5307C31.9062 15.9635 31.9492 15.3404 32.0352 14.6614H37.9137C37.8621 15.0568 37.8363 15.4005 37.8363 15.6928C37.8363 16.5608 38.0726 17.0464 38.5453 17.1495C39.0266 17.2526 39.6583 17.3042 40.4404 17.3042C41.2225 17.3042 41.8928 17.2784 42.4514 17.2268C43.0187 17.1667 43.3538 16.7284 43.457 15.9119C43.4656 15.8432 43.4699 15.7787 43.4699 15.7185C43.4699 15.1255 43.0659 14.756 42.2581 14.6099C41.4588 14.4552 40.3544 14.2489 38.945 13.9911C36.3839 13.3981 34.7166 12.7621 33.9431 12.0832C33.1696 11.3956 32.7829 10.4245 32.7829 9.16969C32.7829 8.85171 32.8044 8.51653 32.8473 8.16416C33.1825 5.42259 34.115 3.61349 35.6448 2.73687C37.1745 1.85166 39.4005 1.40906 42.3225 1.40906C45.2274 1.40906 47.2685 1.84737 48.4459 2.72398C49.6234 3.6006 50.2121 4.99717 50.2121 6.9137C50.2121 7.42935 50.1734 7.98368 50.0961 8.57669H44.2305C44.2734 8.22432 44.2949 7.91063 44.2949 7.63562C44.2949 6.759 44.0414 6.26483 43.5343 6.1531C43.0273 6.04138 42.4128 5.98551 41.6908 5.98551C40.8658 5.98551 40.1697 6.01989 39.6024 6.08864C39.0438 6.1488 38.7129 6.57852 38.6098 7.37779C38.6012 7.46373 38.5969 7.54538 38.5969 7.62272C38.5969 8.30167 39.0137 8.70131 39.8474 8.82163C40.681 8.94195 41.7854 9.14391 43.1605 9.42752C45.8161 10.0119 47.5221 10.6135 48.2784 11.2323C49.0347 11.8511 49.4128 12.7707 49.4128 13.9911C49.4128 14.2833 49.3913 14.6013 49.3483 14.9451C48.996 17.7726 48.085 19.6375 46.6154 20.5399C45.1543 21.4337 42.9241 21.8806 39.9247 21.8806Z" fill="currentColor" />
+    </svg>
+);
+
 export default function AdminPanel() {
     const router = useRouter();
     const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -92,7 +131,12 @@ export default function AdminPanel() {
     const [selectedGroup, setSelectedGroup] = useState<any>(null);
     const [groupMembers, setGroupMembers] = useState<any[]>([]);
     const [isLoadingGroupMembers, setIsLoadingGroupMembers] = useState(false);
-    const [users, setUsers] = useState<any[]>([]);
+    // ── Normal users list (fetched on page open or search clear) ────────────
+    const [baseUsers, setBaseUsers] = useState<any[]>([]);
+    // ── Search results (only populated when search is active) ────────────────
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    // ── True when a search query is active (non-empty) ───────────────────────
+    const [isSearchActive, setIsSearchActive] = useState(false);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [dashboardData, setDashboardData] = useState({
         total_users: 0,
@@ -101,8 +145,12 @@ export default function AdminPanel() {
         total_unpaid_users: 0
     });
     const [groups, setGroups] = useState<any[]>([]);
+    const [baseGroups, setBaseGroups] = useState<any[]>([]);
+    const [searchResultsGroups, setSearchResultsGroups] = useState<any[]>([]);
+    const [isLoadingGroups, setIsLoadingGroups] = useState(false);
     const [posts, setPosts] = useState<any[]>([]);
     const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+    const searchGenGroupsRef = useRef(0);
     const [isDeletingPost, setIsDeletingPost] = useState<number | null>(null);
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -119,6 +167,9 @@ export default function AdminPanel() {
     const [isLoadingWorkouts, setIsLoadingWorkouts] = useState(false);
     const [workoutSubView, setWorkoutSubView] = useState('library'); // 'library', 'upload', 'analytics'
     const [mounted, setMounted] = useState(false);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+    // Generation counter: incremented on every new search; used to discard stale responses
+    const searchGenRef = useRef(0);
 
     // For upload video
     const [isAddVideoModalOpen, setIsAddVideoModalOpen] = useState(false);
@@ -263,14 +314,15 @@ export default function AdminPanel() {
                 // Fetch Users List
                 const usersRes = await getAllUsers();
                 if (usersRes && usersRes.success !== false) {
-                    let rawUsers = [];
+                    let rawUsers: any[] = [];
                     if (Array.isArray(usersRes.users)) rawUsers = usersRes.users;
                     else if (Array.isArray(usersRes.data?.users)) rawUsers = usersRes.data.users;
                     else if (Array.isArray(usersRes.data?.data)) rawUsers = usersRes.data.data;
                     else if (Array.isArray(usersRes.data)) rawUsers = usersRes.data;
                     else if (Array.isArray(usersRes)) rawUsers = usersRes;
 
-                    setUsers(rawUsers);
+                    // Store in baseUsers — never overwrite with search results
+                    setBaseUsers(rawUsers.map(normalizeUser));
                 }
 
                 // Fetch Groups
@@ -279,7 +331,7 @@ export default function AdminPanel() {
                     const rawGroups = Array.isArray(groupsRes.groups) ? groupsRes.groups :
                         Array.isArray(groupsRes.data) ? groupsRes.data :
                             Array.isArray(groupsRes) ? groupsRes : [];
-                    setGroups(rawGroups);
+                    setBaseGroups(rawGroups.map(normalizeGroup));
                 }
             } catch (err) {
                 // console.error('Error fetching admin data:', err);
@@ -340,47 +392,179 @@ export default function AdminPanel() {
     }, [selectedGroup]);
 
     useEffect(() => {
-        const fetchPosts = async () => {
-            if (view !== 'posts') return;
+        if (view !== 'posts') return;
 
+        let cancelled = false;
+
+        const fetchPosts = async () => {
             setIsLoadingPosts(true);
             try {
-                const searchRes = await searchUsersAdmin({
-                    search: searchTerm,
-                    type: 'posts',
-                    date_from: postDateFilter
-                });
+                let rawPosts: any[] = [];
+                const hasSearch = searchTerm.trim().length > 0;
+                const hasDateFilter = postDateFilter.length > 0;
 
-                if (searchRes && searchRes.success !== false) {
-                    let rawPosts = [];
-                    if (Array.isArray(searchRes.posts)) rawPosts = searchRes.posts;
-                    else if (Array.isArray(searchRes.data?.posts)) rawPosts = searchRes.data.posts;
-                    else if (Array.isArray(searchRes.data?.data)) rawPosts = searchRes.data.data;
-                    else if (Array.isArray(searchRes.data)) rawPosts = searchRes.data;
-                    else if (Array.isArray(searchRes)) rawPosts = searchRes;
-                    else if (searchRes.data && typeof searchRes.data === 'object' && !Array.isArray(searchRes.data)) {
-                        if (searchRes.data.id || searchRes.data.post_id) {
-                            rawPosts = [searchRes.data];
-                        }
-                    } else if (searchRes.id || searchRes.post_id) {
-                        rawPosts = [searchRes];
+                if (!hasSearch && !hasDateFilter) {
+                    // ── Default load: use normal posts list API ──
+                    const res = await getAllPosts();
+                    if (!cancelled && res && res.success !== false) {
+                        if (Array.isArray(res.posts)) rawPosts = res.posts;
+                        else if (Array.isArray(res.data?.posts)) rawPosts = res.data.posts;
+                        else if (Array.isArray(res.data)) rawPosts = res.data;
+                        else if (Array.isArray(res)) rawPosts = res;
                     }
-
-                    setPosts(rawPosts);
+                } else {
+                    // ── Active search / date filter: use search API ──
+                    const searchRes = await searchUsersAdmin({
+                        search: searchTerm,
+                        type: 'posts',
+                        date_from: postDateFilter
+                    });
+                    if (!cancelled && searchRes && searchRes.success !== false) {
+                        if (Array.isArray(searchRes.posts)) rawPosts = searchRes.posts;
+                        else if (Array.isArray(searchRes.data?.posts)) rawPosts = searchRes.data.posts;
+                        else if (Array.isArray(searchRes.data?.data)) rawPosts = searchRes.data.data;
+                        else if (Array.isArray(searchRes.data)) rawPosts = searchRes.data;
+                        else if (Array.isArray(searchRes)) rawPosts = searchRes;
+                        else if (searchRes.data && typeof searchRes.data === 'object' && !Array.isArray(searchRes.data)) {
+                            if (searchRes.data.id || searchRes.data.post_id) rawPosts = [searchRes.data];
+                        } else if (searchRes.id || searchRes.post_id) {
+                            rawPosts = [searchRes];
+                        }
+                    }
                 }
-            } catch (err) {
-                // console.error('Error fetching posts:', err);
+
+                if (!cancelled) setPosts(rawPosts.map(normalizePost));
+            } catch {
+                // silently handle
             } finally {
-                setIsLoadingPosts(false);
+                if (!cancelled) setIsLoadingPosts(false);
             }
         };
 
-        const timer = setTimeout(() => {
-            fetchPosts();
+        // Debounce only when actively searching; load immediately on default state
+        const delay = searchTerm.trim() || postDateFilter ? 400 : 0;
+        const timer = setTimeout(fetchPosts, delay);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [searchTerm, postDateFilter, view]);
+
+    // ── Unified users fetch: handles search + payment filter together ─────────
+    useEffect(() => {
+        if (view !== 'users') return;
+
+        const trimmed = searchTerm.trim();
+        const hasSearch = trimmed.length > 0;
+        const hasFilter = userFilter !== 'All';
+
+        // Generation counter – discard responses from superseded requests
+        const currentGen = ++searchGenRef.current;
+        let cancelled = false;
+
+        setIsSearchActive(hasSearch || hasFilter);
+        setIsLoadingUsers(true);
+
+        const doFetch = async () => {
+            try {
+                let rawUsers: any[] = [];
+
+                if (!hasSearch && !hasFilter) {
+                    // ── Default: normal full users list ──────────────────────
+                    const res = await getAllUsers();
+                    if (cancelled || currentGen !== searchGenRef.current) return;
+                    if (res && res.success !== false) {
+                        if (Array.isArray(res.users)) rawUsers = res.users;
+                        else if (Array.isArray(res.data?.users)) rawUsers = res.data.users;
+                        else if (Array.isArray(res.data?.data)) rawUsers = res.data.data;
+                        else if (Array.isArray(res.data)) rawUsers = res.data;
+                        else if (Array.isArray(res)) rawUsers = res;
+                    }
+                    if (cancelled || currentGen !== searchGenRef.current) return;
+                    setBaseUsers(rawUsers.map(normalizeUser));
+                    setSearchResults([]);
+                } else {
+                    // ── Search or filter active: call search API ─────────────
+                    const res = await searchUsersAdmin({
+                        search: trimmed,
+                        type: 'users',
+                        payment_status: hasFilter ? userFilter : undefined,
+                    });
+                    if (cancelled || currentGen !== searchGenRef.current) return;
+                    if (res && res.success !== false) {
+                        if (Array.isArray(res.users)) rawUsers = res.users;
+                        else if (Array.isArray(res.data?.users)) rawUsers = res.data.users;
+                        else if (Array.isArray(res.data?.data)) rawUsers = res.data.data;
+                        else if (Array.isArray(res.data)) rawUsers = res.data;
+                        else if (Array.isArray(res)) rawUsers = res;
+                    }
+                    if (cancelled || currentGen !== searchGenRef.current) return;
+                    setSearchResults(rawUsers.map(normalizeUser));
+                }
+            } catch {
+                // silently handle
+            } finally {
+                if (!cancelled && currentGen === searchGenRef.current) {
+                    setIsLoadingUsers(false);
+                }
+            }
+        };
+
+        // Debounce only when typing; fire immediately for filter-only changes
+        const delay = hasSearch ? 400 : 0;
+        const timer = setTimeout(doFetch, delay);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [searchTerm, userFilter, view]);
+
+    // ── Groups search effect ────────────────────────────────────────────────
+    useEffect(() => {
+        if (view !== 'groups') return;
+
+        const trimmed = searchTerm.trim();
+
+        if (!trimmed) {
+            setSearchResultsGroups([]);
+            setIsLoadingGroups(false);
+            return;
+        }
+
+        const currentGen = ++searchGenGroupsRef.current;
+        let cancelled = false;
+        setIsLoadingGroups(true);
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await searchUsersAdmin({ search: trimmed, type: 'groups' });
+
+                if (cancelled || currentGen !== searchGenGroupsRef.current) return;
+
+                if (res && res.success !== false) {
+                    const rawGroups = Array.isArray(res.groups) ? res.groups :
+                        Array.isArray(res.data?.groups) ? res.data.groups :
+                            Array.isArray(res.data?.data) ? res.data.data :
+                                Array.isArray(res.data) ? res.data :
+                                    Array.isArray(res) ? res : [];
+                    setSearchResultsGroups(rawGroups.map(normalizeGroup));
+                }
+            } catch {
+                // handle error
+            } finally {
+                if (!cancelled && currentGen === searchGenGroupsRef.current) {
+                    setIsLoadingGroups(false);
+                }
+            }
         }, 400);
 
-        return () => clearTimeout(timer);
-    }, [searchTerm, postDateFilter, view]);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [searchTerm, view]);
 
     useEffect(() => {
         const fetchMenuItems = async () => {
@@ -502,14 +686,19 @@ export default function AdminPanel() {
     };
 
     const handleStatusChange = async (user: any, newStatus: 0 | 1) => {
-        // Optimistically update UI
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: newStatus, is_active: newStatus === 1 } : u));
+        // Optimistically update UI in both lists
+        const applyStatus = (list: any[]) =>
+            list.map(u => u.id === user.id ? { ...u, account_is_active: newStatus, is_active: newStatus === 1 } : u);
+        setBaseUsers(prev => applyStatus(prev));
+        if (isSearchActive) setSearchResults(prev => applyStatus(prev));
         try {
             await updateUserStatus(user.id, newStatus);
         } catch (err) {
-            // console.error('Failed to update user status:', err);
             // Revert on failure
-            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u));
+            const revert = (list: any[]) =>
+                list.map(u => u.id === user.id ? { ...u, account_is_active: user.account_is_active, is_active: user.is_active } : u);
+            setBaseUsers(prev => revert(prev));
+            if (isSearchActive) setSearchResults(prev => revert(prev));
         }
     };
 
@@ -623,23 +812,12 @@ export default function AdminPanel() {
         }
     };
 
-    const filteredUsers = users.filter(user => {
-        const displayName = user.username || user.name || user.email || '';
-        const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Server already handles search + payment_status filtering.
+    // isSearchActive covers both text-search AND payment filter.
+    const filteredUsers = isSearchActive ? searchResults : baseUsers;
 
-        const matchesFilter = userFilter === 'All' ? true :
-            userFilter === 'Paid' ? user.payment_status === true || user.payment_status === 1 :
-                user.payment_status === false || user.payment_status === 0;
-
-        return matchesSearch && matchesFilter;
-    });
-
-    const filteredGroups = groups.filter(group => {
-        const nameMatch = group.name?.toLowerCase().includes(searchTerm.toLowerCase());
-        const descMatch = group.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        return nameMatch || descMatch;
-    });
+    // Group search uses server results when searchTerm is present
+    const filteredGroups = searchTerm.trim() ? searchResultsGroups : baseGroups;
 
     const filteredPosts = posts;
 
@@ -721,22 +899,23 @@ export default function AdminPanel() {
             {/* Sidebar */}
             <aside className={`hidden md:flex flex-col w-70 h-full glass border-r ${borderColor} shrink-0 z-10`}>
                 {/* Logo zone — same height as header */}
-                <div className={`flex flex-col  px-5 pt-0 pb-0 border-b ${borderColor} shrink-0`}>
-                    <div className="w-40 h-24 relative">
-                        <Image src="/logo.png" alt="Logo" fill className={`object-contain transition-all ${!isDark ? 'invert' : ''}`} />
-                    </div>
+                <div className={`px-5 py-8 border-b ${borderColor} shrink-0`}>
+                    <Logo
+                        className={`h-8 w-auto transition-all duration-300 [&_.shift-text]:transition-colors ${!isDark ? '[&_.shift-text]:fill-black' : '[&_.shift-text]:fill-white'
+                            }`}
+                    />
                 </div>
 
                 <nav className="flex flex-col gap-3 flex-1 px-8 pt-6">
                     <button
-                        onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Shield size={20} className={view === 'admin' ? 'text-black' : ''} />
                         <span>Dashboard</span>
                     </button>
                     <button
-                        onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Users size={20} className={view === 'users' ? 'text-black' : ''} />
@@ -744,28 +923,28 @@ export default function AdminPanel() {
                     </button>
 
                     <button
-                        onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'groups' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'groups' ? 'text-black' : ''} />
                         <span>Groups</span>
                     </button>
                     <button
-                        onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'posts' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <ImageIcon size={20} className={view === 'posts' ? 'text-black' : ''} />
                         <span>Posts</span>
                     </button>
                     <button
-                        onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'menu' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'menu' ? 'text-black' : ''} />
                         <span>Menu Access</span>
                     </button>
                     <button
-                        onClick={() => { setView('workout_setting'); setSelectedUser(null); setSelectedGroup(null); }}
+                        onClick={() => { setView('workout_setting'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'workout_setting' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Activity size={20} className={view === 'workout_setting' ? 'text-black' : ''} />
@@ -1009,7 +1188,22 @@ export default function AdminPanel() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                                 <div>
                                     <h2 className={`text-2xl font-black italic uppercase tracking-tight ${text}`}>Active Communities</h2>
-                                    <p className={`${textMuted} text-sm mt-1`}>Found {groups.length} active groups in the ecosystem.</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {isLoadingGroups ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+                                                <p className={`${textMuted} text-xs font-bold uppercase tracking-widest`}>Searching groups...</p>
+                                            </div>
+                                        ) : (
+                                            <p className={`${textMuted} text-sm`}>
+                                                {searchTerm.trim() ? (
+                                                    <>Found <span className="text-lime-400 font-black">{filteredGroups.length}</span> result{filteredGroups.length !== 1 ? 's' : ''} for &ldquo;<span className={isDark ? 'text-white' : 'text-gray-900'}>{searchTerm}</span>&rdquo;</>
+                                                ) : (
+                                                    <>Found <span className={isDark ? 'text-white' : 'text-gray-900'}>{filteredGroups.length}</span> active groups in the ecosystem.</>
+                                                )}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                                 <button className="flex items-center gap-2 bg-lime-400 text-black px-5 py-2.5 rounded-xl font-bold transition-all shadow-xl hover:shadow-lime-400/20 active:scale-95">
                                     <Layers size={18} />
@@ -1036,7 +1230,15 @@ export default function AdminPanel() {
                                                 )}
                                             </div>
 
-                                            <h3 className={`text-xl font-black italic tracking-tight ${text} mb-2 group-hover:text-lime-400 transition-colors uppercase truncate`}>{group.name}</h3>
+                                            <h3 className={`text-xl font-black italic tracking-tight ${text} mb-1 group-hover:text-lime-400 transition-colors uppercase truncate`}>{group.name}</h3>
+
+                                            {group.username && (
+                                                <div className={`text-[10px] ${textMuted} mb-3 flex items-center gap-1 font-bold uppercase tracking-wider`}>
+                                                    <Users size={10} className="text-lime-400" />
+                                                    <span>By {group.username}</span>
+                                                </div>
+                                            )}
+
                                             <p className={`${textMuted} text-xs font-medium line-clamp-2 leading-relaxed mb-6 h-8 italic`}>"{group.description || 'No description provided.'}"</p>
 
                                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
@@ -1055,10 +1257,12 @@ export default function AdminPanel() {
                                 ))}
                             </div>
 
-                            {filteredGroups.length === 0 && (
+                            {!isLoadingGroups && filteredGroups.length === 0 && (
                                 <div className="p-20 text-center glass rounded-[2rem] border border-dashed border-white/10 mt-10">
                                     <Layers size={48} className="mx-auto text-gray-700 mb-4 opacity-20" />
-                                    <p className="text-gray-500 font-bold italic tracking-tighter">No groups detected in the system.</p>
+                                    <p className="text-gray-500 font-bold italic tracking-tighter">
+                                        {searchTerm.trim() ? `No groups found matching "${searchTerm}".` : 'No groups detected in the system.'}
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -1084,6 +1288,46 @@ export default function AdminPanel() {
 
                             {/* Users Table */}
                             <div className="glass-card rounded-[2rem] overflow-hidden">
+                                {/* Info bar: loading / search context / count */}
+                                <div className={`flex items-center justify-between px-6 py-3 border-b ${borderColor} ${theadBg}`}>
+                                    <div className={`text-xs font-bold ${textMuted} flex items-center gap-2`}>
+                                        {isLoadingUsers ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+                                                <span>
+                                                    {searchTerm.trim() ? 'Searching users…' : `Loading ${userFilter} users…`}
+                                                </span>
+                                            </>
+                                        ) : isSearchActive ? (
+                                            <>
+                                                <Search size={12} className="text-lime-400" />
+                                                <span>
+                                                    <span className="text-lime-400 font-black">{filteredUsers.length}</span>{' '}
+                                                    result{filteredUsers.length !== 1 ? 's' : ''}
+                                                    {searchTerm.trim() && (
+                                                        <> for &ldquo;<span className={isDark ? 'text-white' : 'text-gray-900'}>{searchTerm.trim()}</span>&rdquo;</>
+                                                    )}
+                                                    {userFilter !== 'All' && (
+                                                        <> &middot; <span className="text-lime-400">{userFilter}</span></>
+                                                    )}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span>
+                                                <span className={`font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{filteredUsers.length}</span> users in the system
+                                            </span>
+                                        )}
+                                    </div>
+                                    {searchTerm.trim() && !isLoadingUsers && (
+                                        <button
+                                            onClick={() => setSearchTerm('')}
+                                            className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-black/10'}`}
+                                        >
+                                            <X size={12} />
+                                            Clear search
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
@@ -1106,15 +1350,23 @@ export default function AdminPanel() {
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 shadow-md overflow-hidden">
-                                                                {user.image ? (
-                                                                    <img src={resolveImageUrl(user.image) || ''} alt="" className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <span>👤</span>
-                                                                )}
+                                                                {(() => {
+                                                                    const img = user.image;
+                                                                    return img ? (
+                                                                        <img src={resolveImageUrl(img) || ''} alt="" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <span>👤</span>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                             <div>
                                                                 <div className={`font-bold flex items-center gap-2 ${text} group-hover:text-lime-400 transition-colors`}>
-                                                                    {user.username || user.name || 'Anonymous'}
+                                                                    {/* username/image always flat after normalizeUser */}
+                                                                    {(user.username != null && user.username !== '')
+                                                                        ? user.username
+                                                                        : (user.name != null && user.name !== '')
+                                                                            ? user.name
+                                                                            : 'Anonymous'}
                                                                 </div>
                                                                 <div className={`text-xs ${textMuted} flex items-center gap-1 mt-1`}>
                                                                     <Mail size={10} />
@@ -1137,10 +1389,9 @@ export default function AdminPanel() {
                                                                     <div
                                                                         className={`absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isActive
                                                                             ? 'left-0.5 bg-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.5)]'
-                                                                            : 'left-[calc(50%+1px)] bg-red-900'
+                                                                            : 'left-[calc(50%+1px)] bg-lime-500'
                                                                             }`}
                                                                     />
-                                                                    {/* Active button */}
                                                                     {/* Active button */}
                                                                     <button
                                                                         onClick={() => handleStatusChange(user, 1)}
@@ -1180,10 +1431,13 @@ export default function AdminPanel() {
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {filteredUsers.length === 0 && (
+                                            {/* Never show empty-state while a request is in flight */}
+                                            {!isLoadingUsers && filteredUsers.length === 0 && (
                                                 <tr>
                                                     <td colSpan={5} className={`p-10 text-center ${textMuted} font-bold`}>
-                                                        No users found matching the criteria.
+                                                        {isSearchActive
+                                                            ? `No users found for "${searchTerm}".`
+                                                            : 'No users found matching the criteria.'}
                                                     </td>
                                                 </tr>
                                             )}
@@ -1226,7 +1480,7 @@ export default function AdminPanel() {
                                                 : Array.isArray(res?.data) ? res.data
                                                     : Array.isArray(res) ? res
                                                         : [];
-                                            setPosts(rawPosts);
+                                            setPosts(rawPosts.map(normalizePost));
                                             setIsLoadingPosts(false);
                                         });
                                     }}>
