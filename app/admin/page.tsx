@@ -959,7 +959,7 @@ export default function AdminPanel() {
                 </div> */}
 
                 {/* Profile Dropdown */}
-                <div className="px-5   pb-70 relative">
+                <div className="px-5   pb-0 relative">
                     {/* Clickable profile card */}
                     <button
                         onClick={() => setShowProfileMenu(v => !v)}
@@ -1010,16 +1010,7 @@ export default function AdminPanel() {
                                 </div>
 
                                 {/* Back to App */}
-                                <button
-                                    onClick={() => { setShowProfileMenu(false); router.push('/dashboard'); }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold ${isDark
-                                        ? 'text-gray-300 hover:text-white hover:bg-white/5'
-                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                                        }`}
-                                >
-                                    <ArrowLeft size={16} />
-                                    <span>Back to App</span>
-                                </button>
+
 
                                 {/* Divider */}
                                 <div className={isDark ? 'border-t border-white/5' : 'border-t border-gray-100'} />
@@ -1467,80 +1458,80 @@ export default function AdminPanel() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredPosts.map((post, idx) => (
-                                        <div
-                                            key={post.post_id}
-                                            className="glass-card rounded-3xl overflow-hidden flex flex-col h-full relative"
-                                        >
-                                            {/* Media */}
-                                            <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
-                                                {post.media_url ? (
-                                                    <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
-                                                )}
+                                    <div
+                                        key={post.post_id}
+                                        className="glass-card rounded-3xl overflow-hidden flex flex-col h-full relative"
+                                    >
+                                        {/* Media */}
+                                        <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
+                                            {post.media_url ? (
+                                                <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
+                                            )}
 
-                                                {/* Delete Overlay Button */}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeletePost(post.post_id);
-                                                    }}
-                                                    disabled={isDeletingPost === post.post_id}
-                                                    className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
-                                                    title="Delete Post"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
+                                            {/* Delete Overlay Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeletePost(post.post_id);
+                                                }}
+                                                disabled={isDeletingPost === post.post_id}
+                                                className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
+                                                title="Delete Post"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
 
-                                            {/* Content */}
-                                            <div className="p-5 flex-1 flex flex-col">
-                                                {/* Author */}
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden shrink-0 border border-white/10">
-                                                        {post.user?.image ? (
-                                                            <img src={resolveImageUrl(post.user.image) || ''} alt={post.user.username} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-xs">👤</div>
-                                                        )}
+                                        {/* Content */}
+                                        <div className="p-5 flex-1 flex flex-col">
+                                            {/* Author */}
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden shrink-0 border border-white/10">
+                                                    {post.user?.image ? (
+                                                        <img src={resolveImageUrl(post.user.image) || ''} alt={post.user.username} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-xs">👤</div>
+                                                    )}
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <div className={`text-sm font-bold ${text} truncate group-hover:text-lime-400`}>
+                                                        {post.user?.username || 'Unknown User'}
                                                     </div>
-                                                    <div className="overflow-hidden">
-                                                        <div className={`text-sm font-bold ${text} truncate group-hover:text-lime-400`}>
-                                                            {post.user?.username || 'Unknown User'}
-                                                        </div>
-                                                        <div className={`text-[10px] ${textMuted} truncate`}>
-                                                            {new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
-                                                        </div>
+                                                    <div className={`text-[10px] ${textMuted} truncate`}>
+                                                        {new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Text Content */}
-                                                <p className={`${textSub} text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:${text}`}>
-                                                    {post.content || <span className={`${textMuted} italic`}>No text content</span>}
-                                                </p>
+                                            {/* Text Content */}
+                                            <p className={`${textSub} text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:${text}`}>
+                                                {post.content || <span className={`${textMuted} italic`}>No text content</span>}
+                                            </p>
 
-                                                {/* Stats Footer */}
-                                                <div className={`pt-4 mt-auto border-t ${borderColor} flex items-center justify-between text-xs ${textSub} font-bold uppercase tracking-wider`}>
-                                                    <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
-                                                        <span className="text-lime-400">♥</span> {post.like_count}
-                                                    </div>
-                                                    <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
-                                                        <span className="text-blue-400">💬</span> {post.comment_count}
-                                                    </div>
-                                                    <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
-                                                        <span className="text-purple-400">↗</span> {post.share_count}
-                                                    </div>
+                                            {/* Stats Footer */}
+                                            <div className={`pt-4 mt-auto border-t ${borderColor} flex items-center justify-between text-xs ${textSub} font-bold uppercase tracking-wider`}>
+                                                <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                    <span className="text-lime-400">♥</span> {post.like_count}
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                    <span className="text-blue-400">💬</span> {post.comment_count}
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 ${isDark ? 'bg-white/5' : 'bg-black/5'} px-2 py-1 rounded-md`}>
+                                                    <span className="text-purple-400">↗</span> {post.share_count}
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-
-                                {isLoadingPosts && filteredPosts.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                        <p className="text-gray-500 font-bold italic tracking-tighter">Syncing Feed...</p>
                                     </div>
-                                )}
+                                ))}
+                            </div>
+
+                            {isLoadingPosts && filteredPosts.length === 0 && (
+                                <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                    <p className="text-gray-500 font-bold italic tracking-tighter">Syncing Feed...</p>
+                                </div>
+                            )}
 
                             {!isLoadingPosts && filteredPosts.length === 0 && (
                                 <div className={`p-20 text-center glass rounded-[2rem] border border-dashed ${borderColor} mt-10`}>
