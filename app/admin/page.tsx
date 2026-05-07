@@ -51,7 +51,7 @@ const ActivityPulse = () => {
             {[...Array(40)].map((_, i) => (
                 <div
                     key={i}
-                    className="flex-1 bg-lime-400/20 rounded-full relative overflow-hidden group/bar transition-all hover:bg-lime-400/40"
+                    className="flex-1 bg-lime-400/20 rounded-full relative overflow-hidden group/bar hover:bg-lime-400/40"
                     style={{ height: `${Math.random() * 80 + 20}%` }}
                 >
                     <div
@@ -840,13 +840,13 @@ export default function AdminPanel() {
     const rowHover = isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-gray-100/70';
     const theadBg = isDark ? 'bg-white/[0.02]' : 'bg-gray-100/60';
     const divideColor = isDark ? 'divide-white/5' : 'divide-gray-200';
-    const sidebarBtnActive = 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)] scale-[1.02]';
-    const sidebarBtnInactive = isDark ? `${textMuted} hover:text-white hover:bg-white/5 hover:scale-[1.02]` : `${textMuted} hover:text-gray-900 hover:bg-black/5 hover:scale-[1.02]`;
+    const sidebarBtnActive = 'bg-lime-400 text-black font-bold shadow-[0_0_30px_rgba(163,230,53,0.3)]';
+    const sidebarBtnInactive = isDark ? `${textMuted} hover:text-white hover:bg-white/5` : `${textMuted} hover:text-gray-900 hover:bg-black/5`;
 
     if (!mounted) return null; // Prevent hydration mismatch flicker
 
     return (
-        <div className={`min-h-screen ${bg} ${text} font-sans selection:bg-lime-400 selection:text-black flex flex-col md:flex-row h-screen overflow-hidden transition-colors duration-300`}>
+        <div className={`min-h-screen ${bg} ${text} font-sans selection:bg-lime-400 selection:text-black flex flex-col md:flex-row h-screen overflow-hidden`}>
             <style jsx global>{`
                 .glass {
                     background: ${glassBg};
@@ -859,27 +859,6 @@ export default function AdminPanel() {
                     backdrop-filter: blur(20px);
                     border: 1px solid ${glassCardBorder};
                     box-shadow: 0 4px 30px ${isDark ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)'};
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(20px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                .animate-slide-up {
-                    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                .animate-fade-in {
-                    animation: fadeIn 0.4s ease-out forwards;
-                }
-                @keyframes scaleIn {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                .animate-scale-in {
-                    animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
                 ::-webkit-scrollbar {
                     width: 6px;
@@ -1000,7 +979,7 @@ export default function AdminPanel() {
                             </div>
                         </div>
                         {/* Chevron */}
-                        <div className={`transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`}>
+                        <div>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={textMuted}>
                                 <polyline points="6 9 12 15 18 9" />
                             </svg>
@@ -1033,7 +1012,7 @@ export default function AdminPanel() {
                                 {/* Back to App */}
                                 <button
                                     onClick={() => { setShowProfileMenu(false); router.push('/dashboard'); }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${isDark
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold ${isDark
                                         ? 'text-gray-300 hover:text-white hover:bg-white/5'
                                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                                         }`}
@@ -1048,7 +1027,7 @@ export default function AdminPanel() {
                                 {/* Logout */}
                                 <button
                                     onClick={() => { setShowProfileMenu(false); handleLogout(); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/80 transition-colors"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/80"
                                 >
                                     <LogOut size={16} />
                                     <span>Logout</span>
@@ -1083,8 +1062,8 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className={`hidden sm:flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border ${borderColor} group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)] transition-all`}>
-                            <Search size={18} className={`${textSub} group-focus-within:text-lime-400 transition-colors`} />
+                        <div className={`hidden sm:flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border ${borderColor} group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)]`}>
+                            <Search size={18} className={`${textSub} group-focus-within:text-lime-400`} />
                             <input
                                 type="text"
                                 placeholder="Search details..."
@@ -1096,16 +1075,14 @@ export default function AdminPanel() {
                         {/* Mobile theme toggle */}
                         <button
                             onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                            className={`p-3 glass rounded-2xl transition-all group overflow-hidden relative ${isDark ? 'hover:border-amber-400/30' : 'hover:border-gray-900/30'}`}
+                            className={`p-3 glass rounded-2xl ${isDark ? 'hover:border-amber-400/30' : 'hover:border-gray-900/30'}`}
                             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                         >
-                            <div className="absolute inset-0 bg-lime-400/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-                            {isDark ? <Sun size={20} className="group-hover:text-amber-400 relative z-10 transition-colors" /> : <Moon size={20} className="group-hover:text-indigo-400 relative z-10 transition-colors" />}
+                            {isDark ? <Sun size={20} className="hover:text-amber-400" /> : <Moon size={20} className="hover:text-indigo-400" />}
                         </button>
-                        <button className="relative p-3 glass rounded-2xl hover:border-lime-400/30 transition-all group overflow-hidden">
-                            <div className="absolute inset-0 bg-lime-400/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-                            <Bell size={22} className="group-hover:text-lime-400 relative z-10 transition-colors" />
-                            <span className={`absolute top-2.5 right-2.5 w-2 h-2 bg-lime-400 rounded-full border ${isDark ? 'border-gray-950' : 'border-gray-50'} shadow-[0_0_5px_rgba(163,230,53,0.8)] z-10`}></span>
+                        <button className="relative p-3 glass rounded-2xl hover:border-lime-400/30">
+                            <Bell size={22} className="hover:text-lime-400" />
+                            <span className={`absolute top-2.5 right-2.5 w-2 h-2 bg-lime-400 rounded-full border ${isDark ? 'border-gray-950' : 'border-gray-50'}`}></span>
                         </button>
                     </div>
                 </header>
@@ -1113,7 +1090,7 @@ export default function AdminPanel() {
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
                     {view === 'admin' ? (
-                        <div className="w-full space-y-8 animate-slide-up">
+                        <div className="w-full space-y-8">
                             {error && (
                                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -1191,7 +1168,7 @@ export default function AdminPanel() {
                                     <div className="flex items-center gap-2 mt-1">
                                         {isLoadingGroups ? (
                                             <div className="flex items-center gap-2">
-                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full" />
                                                 <p className={`${textMuted} text-xs font-bold uppercase tracking-widest`}>Searching groups...</p>
                                             </div>
                                         ) : (
@@ -1205,7 +1182,7 @@ export default function AdminPanel() {
                                         )}
                                     </div>
                                 </div>
-                                <button className="flex items-center gap-2 bg-lime-400 text-black px-5 py-2.5 rounded-xl font-bold transition-all shadow-xl hover:shadow-lime-400/20 active:scale-95">
+                                <button className="flex items-center gap-2 bg-lime-400 text-black px-5 py-2.5 rounded-xl font-bold shadow-xl hover:shadow-lime-400/20">
                                     <Layers size={18} />
                                     <span className="text-sm uppercase tracking-wider">Create New Group</span>
                                 </button>
@@ -1216,21 +1193,20 @@ export default function AdminPanel() {
                                     <div
                                         key={group.id}
                                         onClick={() => setSelectedGroup(group)}
-                                        className="glass-card rounded-[2.5rem] p-6 relative overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in cursor-pointer"
-                                        style={{ animationDelay: `${idx * 0.1}s` }}
+                                        className="glass-card rounded-[2.5rem] p-6 relative overflow-hidden cursor-pointer"
                                     >
-                                        <div className="absolute top-0 right-0 p-10 bg-lime-400/5 rounded-bl-[5rem] translate-x-4 -translate-y-4 group-hover:bg-lime-400/10 transition-all duration-500"></div>
+                                        <div className="absolute top-0 right-0 p-10 bg-lime-400/5 rounded-bl-[5rem] translate-x-4 -translate-y-4 group-hover:bg-lime-400/10"></div>
 
                                         <div className="relative z-10">
-                                            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-lime-400/50 transition-all duration-500 shadow-2xl mb-6">
+                                            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-lime-400/50 shadow-2xl mb-6">
                                                 {group.image ? (
-                                                    <img src={resolveImageUrl(group.image) || ''} alt={group.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                    <img src={resolveImageUrl(group.image) || ''} alt={group.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full bg-white/5 flex items-center justify-center text-2xl">👥</div>
                                                 )}
                                             </div>
 
-                                            <h3 className={`text-xl font-black italic tracking-tight ${text} mb-1 group-hover:text-lime-400 transition-colors uppercase truncate`}>{group.name}</h3>
+                                            <h3 className={`text-xl font-black italic tracking-tight ${text} mb-1 group-hover:text-lime-400 uppercase truncate`}>{group.name}</h3>
 
                                             {group.username && (
                                                 <div className={`text-[10px] ${textMuted} mb-3 flex items-center gap-1 font-bold uppercase tracking-wider`}>
@@ -1293,7 +1269,7 @@ export default function AdminPanel() {
                                     <div className={`text-xs font-bold ${textMuted} flex items-center gap-2`}>
                                         {isLoadingUsers ? (
                                             <>
-                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+                                                <div className="w-3.5 h-3.5 border-2 border-lime-400/30 border-t-lime-400 rounded-full" />
                                                 <span>
                                                     {searchTerm.trim() ? 'Searching users…' : `Loading ${userFilter} users…`}
                                                 </span>
@@ -1321,7 +1297,7 @@ export default function AdminPanel() {
                                     {searchTerm.trim() && !isLoadingUsers && (
                                         <button
                                             onClick={() => setSearchTerm('')}
-                                            className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-black/10'}`}
+                                            className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-black/10'}`}
                                         >
                                             <X size={12} />
                                             Clear search
@@ -1344,12 +1320,11 @@ export default function AdminPanel() {
                                                 <tr
                                                     key={user.id}
                                                     onClick={() => setSelectedUser(user)}
-                                                    className={`group ${rowHover} transition-colors cursor-pointer animate-fade-in`}
-                                                    style={{ animationDelay: `${idx * 0.05}s` }}
+                                                    className={`group ${rowHover} cursor-pointer`}
                                                 >
                                                     <td className="p-6">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:border-lime-400/30 transition-all duration-300 shadow-md overflow-hidden">
+                                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:border-lime-400/30 shadow-md overflow-hidden">
                                                                 {(() => {
                                                                     const img = user.image;
                                                                     return img ? (
@@ -1360,7 +1335,7 @@ export default function AdminPanel() {
                                                                 })()}
                                                             </div>
                                                             <div>
-                                                                <div className={`font-bold flex items-center gap-2 ${text} group-hover:text-lime-400 transition-colors`}>
+                                                                <div className={`font-bold flex items-center gap-2 ${text} group-hover:text-lime-400`}>
                                                                     {/* username/image always flat after normalizeUser */}
                                                                     {(user.username != null && user.username !== '')
                                                                         ? user.username
@@ -1425,7 +1400,7 @@ export default function AdminPanel() {
                                                         </div>
                                                     </td>
                                                     <td className="p-6 text-right">
-                                                        <button className={`p-2 ${textMuted} hover:text-lime-400 transition-colors rounded-xl hover:bg-lime-400/10 hover:scale-110`}>
+                                                        <button className={`p-2 ${textMuted} hover:text-lime-400 rounded-xl hover:bg-lime-400/10`}>
                                                             <ArrowUpRight size={20} />
                                                         </button>
                                                     </td>
@@ -1471,7 +1446,7 @@ export default function AdminPanel() {
                                             </button>
                                         )}
                                     </div>
-                                    <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold transition-all border shadow-xl`} onClick={() => {
+                                    <button className={`flex items-center gap-2 ${isDark ? 'bg-white/5 hover:bg-white/10 text-white border-white/10 hover:border-white/20' : 'bg-black/5 hover:bg-black/10 text-gray-900 border-gray-200 hover:border-gray-300'} px-5 py-2.5 rounded-xl font-bold border shadow-xl`} onClick={() => {
                                         /* Force refresh */
                                         setIsLoadingPosts(true);
                                         getAllPosts().then(res => {
@@ -1490,23 +1465,16 @@ export default function AdminPanel() {
                                 </div>
                             </div>
 
-                            {isLoadingPosts ? (
-                                <div className="flex flex-col items-center justify-center p-20 gap-4">
-                                    <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
-                                    <p className="text-gray-500 font-bold italic tracking-tighter">Loading all posts...</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {filteredPosts.map((post, idx) => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredPosts.map((post, idx) => (
                                         <div
                                             key={post.post_id}
-                                            className="glass-card rounded-3xl overflow-hidden group hover:-translate-y-2 transition-all duration-500 animate-fade-in flex flex-col h-full relative"
-                                            style={{ animationDelay: `${idx * 0.05}s` }}
+                                            className="glass-card rounded-3xl overflow-hidden flex flex-col h-full relative"
                                         >
                                             {/* Media */}
                                             <div className="h-48 w-full bg-gray-900 border-b border-white/10 relative overflow-hidden shrink-0">
                                                 {post.media_url ? (
-                                                    <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                    <img src={resolveImageUrl(post.media_url) || ''} alt="Post media" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold italic text-sm">No Media</div>
                                                 )}
@@ -1518,14 +1486,10 @@ export default function AdminPanel() {
                                                         handleDeletePost(post.post_id);
                                                     }}
                                                     disabled={isDeletingPost === post.post_id}
-                                                    className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
+                                                    className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-500/80 backdrop-blur-md rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed z-10 opacity-0 group-hover:opacity-100"
                                                     title="Delete Post"
                                                 >
-                                                    {isDeletingPost === post.post_id ? (
-                                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                    ) : (
-                                                        <Trash2 size={16} />
-                                                    )}
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </div>
 
@@ -1541,7 +1505,7 @@ export default function AdminPanel() {
                                                         )}
                                                     </div>
                                                     <div className="overflow-hidden">
-                                                        <div className={`text-sm font-bold ${text} truncate group-hover:text-lime-400 transition-colors`}>
+                                                        <div className={`text-sm font-bold ${text} truncate group-hover:text-lime-400`}>
                                                             {post.user?.username || 'Unknown User'}
                                                         </div>
                                                         <div className={`text-[10px] ${textMuted} truncate`}>
@@ -1551,7 +1515,7 @@ export default function AdminPanel() {
                                                 </div>
 
                                                 {/* Text Content */}
-                                                <p className={`${textSub} text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:${text} transition-colors`}>
+                                                <p className={`${textSub} text-sm mb-4 line-clamp-3 overflow-hidden flex-1 group-hover:${text}`}>
                                                     {post.content || <span className={`${textMuted} italic`}>No text content</span>}
                                                 </p>
 
@@ -1571,7 +1535,12 @@ export default function AdminPanel() {
                                         </div>
                                     ))}
                                 </div>
-                            )}
+
+                                {isLoadingPosts && filteredPosts.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center p-20 gap-4">
+                                        <p className="text-gray-500 font-bold italic tracking-tighter">Syncing Feed...</p>
+                                    </div>
+                                )}
 
                             {!isLoadingPosts && filteredPosts.length === 0 && (
                                 <div className={`p-20 text-center glass rounded-[2rem] border border-dashed ${borderColor} mt-10`}>
