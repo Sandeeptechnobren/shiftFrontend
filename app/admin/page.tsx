@@ -29,7 +29,8 @@ import {
     Folder,
     FolderPlus,
     Eye,
-    LogOut
+    LogOut,
+    Menu
 } from 'lucide-react';
 import { getAdminDashboard, getAllUsers, getUserDetails, searchUsersAdmin, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
@@ -205,6 +206,7 @@ export default function AdminPanel() {
     const [newMenuId, setNewMenuId] = useState('');
     const [newSubmenuId, setNewSubmenuId] = useState('');
     const [addMenuError, setAddMenuError] = useState<string | null>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // ── Logout ──────────────────────────────────────────────────────────────
     const handleLogout = useCallback(() => {
@@ -873,28 +875,73 @@ export default function AdminPanel() {
                 ::-webkit-scrollbar-thumb:hover {
                     background: rgba(163, 230, 53, 0.5);
                 }
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slide-up {
+                    from { transform: translateY(20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes scale-in {
+                    from { transform: scale(0.95); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+                .animate-slide-up { animation: slide-up 0.5s ease-out forwards; }
+                .animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
             `}</style>
 
+            {/* Mobile Sidebar Backdrop */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-fade-in"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className={`hidden md:flex flex-col w-70 h-full glass border-r ${borderColor} shrink-0 z-10`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-72 h-full glass border-r ${borderColor} flex flex-col transition-transform duration-300 md:static md:translate-x-0 shrink-0 ${
+                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+                <div className="flex items-center justify-between md:hidden px-5 pt-5">
+                    <Logo className={`h-6 w-auto transition-all duration-300 [&_.shift-text]:transition-colors ${!isDark ? '[&_.shift-text]:fill-black' : '[&_.shift-text]:fill-white'}`} />
+                    <button onClick={() => setIsMobileMenuOpen(false)} className={`p-2 glass rounded-xl ${text}`}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Mobile Search Bar */}
+                <div className="px-8 pt-4 md:hidden">
+                    <div className={`flex items-center glass rounded-2xl px-4 py-3 gap-3 border ${borderColor} group focus-within:border-lime-400/50 transition-all shadow-sm`}>
+                        <Search size={18} className={`${textSub} group-focus-within:text-lime-400`} />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className={`bg-transparent border-none outline-none text-sm w-full font-medium ${isDark ? 'text-white placeholder:text-gray-700' : 'text-gray-900 placeholder:text-gray-400'}`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
                 {/* Logo zone — same height as header */}
-                <div className={`px-5 py-8 border-b ${borderColor} shrink-0`}>
+                <div className={`hidden md:block px-5 py-8 border-b ${borderColor} shrink-0`}>
                     <Logo
                         className={`h-8 w-auto transition-all duration-300 [&_.shift-text]:transition-colors ${!isDark ? '[&_.shift-text]:fill-black' : '[&_.shift-text]:fill-white'
                             }`}
                     />
                 </div>
 
-                <nav className="flex flex-col gap-3 flex-1 px-8 pt-6">
+                <nav className="flex flex-col gap-3 flex-1 px-8 pt-6 overflow-y-auto custom-scrollbar pb-10">
                     <button
-                        onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('admin'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'admin' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Shield size={20} className={view === 'admin' ? 'text-black' : ''} />
                         <span>Dashboard</span>
                     </button>
                     <button
-                        onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('users'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'users' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Users size={20} className={view === 'users' ? 'text-black' : ''} />
@@ -902,28 +949,28 @@ export default function AdminPanel() {
                     </button>
 
                     <button
-                        onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('groups'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'groups' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'groups' ? 'text-black' : ''} />
                         <span>Groups</span>
                     </button>
                     <button
-                        onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('posts'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'posts' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <ImageIcon size={20} className={view === 'posts' ? 'text-black' : ''} />
                         <span>Posts</span>
                     </button>
                     <button
-                        onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('menu'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'menu' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Layers size={20} className={view === 'menu' ? 'text-black' : ''} />
                         <span>Menu Access</span>
                     </button>
                     <button
-                        onClick={() => { setView('workout_setting'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); }}
+                        onClick={() => { setView('workout_setting'); setSelectedUser(null); setSelectedGroup(null); setSearchTerm(''); setPostDateFilter(''); setIsMobileMenuOpen(false); }}
                         className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${view === 'workout_setting' ? sidebarBtnActive : sidebarBtnInactive}`}
                     >
                         <Activity size={20} className={view === 'workout_setting' ? 'text-black' : ''} />
@@ -1033,9 +1080,9 @@ export default function AdminPanel() {
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Header */}
                 <header className={`px-6 pt-6 pb-4 md:px-8 md:pt-6 md:pb-4 flex items-center justify-between border-b ${borderColor} glass z-10 shrink-0`}>
-                    <div className="flex items-center gap-4 md:hidden">
-                        <button onClick={() => router.push('/dashboard')} className="p-2 glass rounded-xl">
-                            <ArrowLeft size={20} />
+                    <div className="flex items-center gap-2 md:hidden">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className={`p-2 glass rounded-xl ${text}`}>
+                            <Menu size={20} />
                         </button>
                     </div>
                     <div className="hidden md:block">
@@ -1053,12 +1100,12 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className={`hidden sm:flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border ${borderColor} group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)]`}>
-                            <Search size={18} className={`${textSub} group-focus-within:text-lime-400`} />
+                        <div className={`flex items-center glass rounded-2xl px-4 py-2.5 gap-3 border ${borderColor} group focus-within:border-lime-400/50 focus-within:shadow-[0_0_15px_rgba(163,230,53,0.1)] shrink min-w-0 max-w-[140px] sm:max-w-none`}>
+                            <Search size={18} className={`${textSub} group-focus-within:text-lime-400 shrink-0`} />
                             <input
                                 type="text"
-                                placeholder="Search details..."
-                                className={`bg-transparent border-none outline-none text-sm w-48 font-medium ${isDark ? 'placeholder:text-gray-700' : 'placeholder:text-gray-400'} focus:placeholder:${textMuted}`}
+                                placeholder="Search..."
+                                className={`bg-transparent border-none outline-none text-sm w-full sm:w-48 font-medium ${isDark ? 'placeholder:text-gray-700' : 'placeholder:text-gray-400'} focus:placeholder:${textMuted}`}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -1651,8 +1698,7 @@ export default function AdminPanel() {
                                         <div className="absolute -right-10 -top-10 w-32 h-32 bg-lime-400/10 rounded-full blur-3xl group-hover/modal:bg-lime-400/20 transition-colors"></div>
                                         <button
                                             onClick={() => setIsAddModalOpen(false)}
-                                            style={{ transform: 'none' }}
-                                            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10"
+                                            className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-xs font-bold shadow-lg active:scale-95`}
                                         >
                                             <X size={14} />
                                             <span>Close</span>
@@ -1722,8 +1768,7 @@ export default function AdminPanel() {
                                         <button
                                             onClick={() => !isRemovingAccess && setAccessToRemove(null)}
                                             disabled={isRemovingAccess}
-                                            style={{ transform: 'none' }}
-                                            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-xs font-bold shadow-lg active:scale-95 disabled:opacity-50`}
                                         >
                                             <X size={14} />
                                             <span>Close</span>
@@ -2060,11 +2105,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => setSelectedUser(null)}
+                                className={`absolute top-4 right-4 md:top-6 md:right-6 z-[60] flex items-center gap-1.5 px-3 py-2 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-sm font-bold shadow-lg active:scale-95`}
                                 style={{ transform: 'none' }}
-                                className="absolute top-6 right-6 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-lg"
                             >
-                                <X size={16} />
-                                <span>Close</span>
+                                <X size={16} className="shrink-0" />
+                                <span className="hidden sm:inline">Close</span>
                             </button>
 
                             {/* Header */}
@@ -2297,11 +2342,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => setSelectedGroup(null)}
+                                className={`absolute top-4 right-4 md:top-6 md:right-6 z-[60] flex items-center gap-1.5 px-3 py-2 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-sm font-bold shadow-lg active:scale-95`}
                                 style={{ transform: 'none' }}
-                                className="absolute top-6 right-6 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-lg"
                             >
-                                <X size={16} />
-                                <span>Close</span>
+                                <X size={16} className="shrink-0" />
+                                <span className="hidden sm:inline">Close</span>
                             </button>
 
                             {/* Header */}
@@ -2393,11 +2438,11 @@ export default function AdminPanel() {
                             {/* Close btn */}
                             <button
                                 onClick={() => { setSelectedVideo(null); setSelectedVideoDetails(null); }}
+                                className={`absolute top-4 right-4 md:top-8 md:right-8 z-[60] flex items-center gap-1.5 px-3 py-2 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-sm font-bold shadow-lg active:scale-95`}
                                 style={{ transform: 'none' }}
-                                className="absolute top-8 right-8 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-sm font-bold border border-white/10 shadow-xl"
                             >
-                                <X size={16} />
-                                <span>Close</span>
+                                <X size={16} className="shrink-0" />
+                                <span className="hidden sm:inline">Close</span>
                             </button>
 
                             <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
@@ -2533,8 +2578,7 @@ export default function AdminPanel() {
                             <button
                                 onClick={() => isDeletingPost === null && setPostToDelete(null)}
                                 disabled={isDeletingPost !== null}
-                                style={{ transform: 'none' }}
-                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-xs font-bold shadow-lg active:scale-95 disabled:opacity-50`}
                             >
                                 <X size={14} />
                                 <span>Close</span>
@@ -2580,8 +2624,7 @@ export default function AdminPanel() {
                             <button
                                 onClick={() => !isMarkingTop && setVideoToMarkTop(null)}
                                 disabled={isMarkingTop}
-                                style={{ transform: 'none' }}
-                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors cursor-pointer text-xs font-bold border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-xs font-bold shadow-lg active:scale-95 disabled:opacity-50`}
                             >
                                 <X size={14} />
                                 <span>Close</span>
