@@ -7,21 +7,28 @@ import { login, getCountryList } from './service/allApi';
 import { extractToken } from './service/APIutils';
 import Toast from './components/Toast';
 import { Loader2 } from 'lucide-react';
+import LegalModal from './components/LegalModal';
 
 export default function SignUpPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [agreed, setAgreed] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
+    const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
 
-        if (!agreed) {
-            setToast({ message: 'Please agree to the terms and conditions', type: 'error' });
+        if (!agreedToTerms) {
+            setToast({ message: 'Please accept Terms & Conditions', type: 'error' });
+            return;
+        }
+        if (!agreedToPrivacy) {
+            setToast({ message: 'Please accept Privacy Policy', type: 'error' });
             return;
         }
 
@@ -30,7 +37,12 @@ export default function SignUpPage() {
         setLoading(true);
 
         try {
-            const response = await login({ email, password });
+            const response = await login({
+                email,
+                password,
+                term_condition_accepted: agreedToTerms ? 1 : 0,
+                privacy_policy_accepted: agreedToPrivacy ? 1 : 0
+            });
 
             // Check if the response indicates success
             if (response.success === false) {
@@ -115,17 +127,45 @@ export default function SignUpPage() {
                                 </div>
                             </div>
 
-                            {/* Terms and Conditions */}
-                            <div className="relative">
+                            {/* Terms and Privacy Policy */}
+                            <div className="space-y-3">
+                                {/* Terms Checkbox */}
                                 <div className="flex items-start">
                                     <input
                                         type="checkbox"
-                                        checked={agreed}
-                                        onChange={(e) => setAgreed(e.target.checked)}
+                                        id="terms"
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
                                         className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
                                     />
                                     <label htmlFor="terms" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                        I agree to the terms and conditions
+                                        I agree to the{' '}
+                                        <span
+                                            onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
+                                            className="text-gray-900 font-bold hover:underline"
+                                        >
+                                            Terms & Conditions
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {/* Privacy Policy Checkbox */}
+                                <div className="flex items-start">
+                                    <input
+                                        type="checkbox"
+                                        id="privacy"
+                                        checked={agreedToPrivacy}
+                                        onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
+                                    />
+                                    <label htmlFor="privacy" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
+                                        I agree to the{' '}
+                                        <span
+                                            onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
+                                            className="text-gray-900 font-bold hover:underline"
+                                        >
+                                            Privacy Policy
+                                        </span>
                                     </label>
                                 </div>
                             </div>
@@ -133,7 +173,7 @@ export default function SignUpPage() {
                             {/* Sign Up Button */}
                             <button
                                 type="submit"
-                                disabled={!agreed || loading}
+                                disabled={!agreedToTerms || !agreedToPrivacy || loading}
                                 className="w-full bg-lime-400 hover:bg-lime-500 disabled:opacity-50 disabled:cursor-not-allowed text-black font-black py-5 rounded-xl transition-all duration-300 uppercase shadow-xl hover:shadow-lime-200/50 flex items-center justify-center gap-2 text-lg active:scale-[0.98]"
                             >
                                 {loading && <Loader2 className="animate-spin" size={24} />}
@@ -176,6 +216,12 @@ export default function SignUpPage() {
                     onClose={() => setToast(null)}
                 />
             )}
+
+            <LegalModal
+                isOpen={legalModalType !== null}
+                onClose={() => setLegalModalType(null)}
+                type={legalModalType}
+            />
         </div>
     );
 }

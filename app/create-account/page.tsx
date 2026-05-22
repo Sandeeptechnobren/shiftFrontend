@@ -6,6 +6,7 @@ import { createAccount, getCountryList } from '../service/allApi';
 import { extractToken } from '../service/APIutils';
 import { useRouter } from 'next/navigation';
 import Toast from '../components/Toast';
+import LegalModal from '../components/LegalModal';
 
 interface Country {
   name: string;
@@ -29,6 +30,9 @@ export default function SignUpForm() {
   // Modal dropdown states
   const [openModal, setOpenModal] = useState<'gender' | 'age_range' | 'country' | null>(null);
 
+  // Legal Modal states
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -37,6 +41,7 @@ export default function SignUpForm() {
     country_code: '',
     password: '',
     agreeToTerms: false,
+    agreeToPrivacy: false,
   });
 
   useEffect(() => {
@@ -61,7 +66,11 @@ export default function SignUpForm() {
 
 
     if (!formData.agreeToTerms) {
-      setToast({ message: "Please agree to the terms and conditions.", type: 'error' });
+      setToast({ message: "Please accept Terms & Conditions", type: 'error' });
+      return;
+    }
+    if (!formData.agreeToPrivacy) {
+      setToast({ message: "Please accept Privacy Policy", type: 'error' });
       return;
     }
 
@@ -80,6 +89,8 @@ export default function SignUpForm() {
         country_code: formData.country_code,
         password: formData.password,
         photo: photo || undefined,
+        term_condition_accepted: formData.agreeToTerms ? 1 : 0,
+        privacy_policy_accepted: formData.agreeToPrivacy ? 1 : 0,
       };
 
       const response = await createAccount(payload);
@@ -378,19 +389,47 @@ export default function SignUpForm() {
                 </div>
               </div>
 
-              {/* Terms Checkbox */}
-              <div className="flex items-start gap-3 pt-4">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                  className="w-6 h-6 mt-0.5 border-gray-300 rounded-lg text-lime-400 focus:ring-lime-400 cursor-pointer"
-                />
-                <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed cursor-pointer select-none">
-                  I agree to the <span className="text-gray-900 font-bold hover:underline">Terms of Service</span> and <span className="text-gray-900 font-bold hover:underline">Privacy Policy</span>
-                </label>
+              {/* Terms and Privacy Checkboxes */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    name="agreeToTerms"
+                    checked={formData.agreeToTerms}
+                    onChange={handleChange}
+                    className="w-6 h-6 mt-0.5 border-gray-300 rounded-lg text-lime-400 focus:ring-lime-400 cursor-pointer"
+                  />
+                  <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed cursor-pointer select-none">
+                    I agree to the{' '}
+                    <span
+                      onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
+                      className="text-gray-900 font-bold hover:underline"
+                    >
+                      Terms & Conditions
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="privacy"
+                    name="agreeToPrivacy"
+                    checked={formData.agreeToPrivacy}
+                    onChange={handleChange}
+                    className="w-6 h-6 mt-0.5 border-gray-300 rounded-lg text-lime-400 focus:ring-lime-400 cursor-pointer"
+                  />
+                  <label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer select-none">
+                    I agree to the{' '}
+                    <span
+                      onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
+                      className="text-gray-900 font-bold hover:underline"
+                    >
+                      Privacy Policy
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {/* Submit Button */}
@@ -462,6 +501,12 @@ export default function SignUpForm() {
           flag: country.flag
         }))}
         onSelect={(value) => setFormData(prev => ({ ...prev, country_code: value }))}
+      />
+
+      <LegalModal
+        isOpen={legalModalType !== null}
+        onClose={() => setLegalModalType(null)}
+        type={legalModalType}
       />
     </div>
   );
