@@ -4,6 +4,8 @@ export const login = async (credentials: {
     email?: string;
     username?: string;
     password: string;
+    term_condition_accepted?: number | boolean;
+    privacy_policy_accepted?: number | boolean;
 }) => {
     try {
         const res = await API.post("/api/signup", credentials);
@@ -49,6 +51,8 @@ export const createAccount = async (payload: {
     country_code: string;
     password: string;
     photo?: File;
+    term_condition_accepted?: number | boolean;
+    privacy_policy_accepted?: number | boolean;
 }) => {
     try {
         const formData = new FormData();
@@ -62,6 +66,8 @@ export const createAccount = async (payload: {
             console.log('[API] Appending photo to FormData:', payload.photo.name, payload.photo.type, payload.photo.size);
             formData.append("image", payload.photo);
         }
+        formData.append("term_condition_accepted", payload.term_condition_accepted ? "1" : "0");
+        formData.append("privacy_policy_accepted", payload.privacy_policy_accepted ? "1" : "0");
 
         // Log all FormData keys for debugging
         const keys: string[] = [];
@@ -97,6 +103,8 @@ export const swiftLogin = async (credentials: {
     username?: string;
     role?: string;
     password: string;
+    term_condition_accepted?: number | boolean;
+    privacy_policy_accepted?: number | boolean;
 }) => {
     try {
         const res = await API.post("/api/signin", credentials);
