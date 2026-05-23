@@ -128,43 +128,81 @@ export default function SignUpPage() {
                             </div>
 
                             {/* Terms and Privacy Policy */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 pt-2">
                                 {/* Terms Checkbox */}
-                                <div className="flex items-start">
-                                    <input
-                                        type="checkbox"
-                                        id="terms"
-                                        checked={agreedToTerms}
-                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                    />
-                                    <label htmlFor="terms" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                        I agree to the{' '}
-                                        <span
-                                            onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
-                                            className="text-gray-900 font-bold hover:underline"
-                                        >
-                                            Terms & Conditions
+                                <div className={`flex items-center p-3.5 rounded-xl border transition-all duration-300 ${
+                                    agreedToTerms 
+                                        ? 'border-lime-400 bg-lime-50/10 shadow-sm' 
+                                        : 'border-gray-200 hover:border-gray-300 bg-gray-50/30'
+                                }`}>
+                                    <label className="flex items-center space-x-3.5 w-full cursor-pointer group">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                id="terms"
+                                                checked={agreedToTerms}
+                                                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-lime-400 peer-focus-visible:ring-offset-2 ${
+                                                agreedToTerms 
+                                                    ? 'bg-lime-400 border-lime-400 shadow-md shadow-lime-400/30 scale-105' 
+                                                    : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:scale-105'
+                                            }`}>
+                                                {agreedToTerms && (
+                                                    <svg className="w-4 h-4 text-black stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="text-sm text-gray-700 select-none leading-relaxed">
+                                            I agree to the{' '}
+                                            <span
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLegalModalType('terms'); }}
+                                                className="text-gray-900 font-bold hover:underline"
+                                            >
+                                                Terms & Conditions
+                                            </span>
                                         </span>
                                     </label>
                                 </div>
 
                                 {/* Privacy Policy Checkbox */}
-                                <div className="flex items-start">
-                                    <input
-                                        type="checkbox"
-                                        id="privacy"
-                                        checked={agreedToPrivacy}
-                                        onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                    />
-                                    <label htmlFor="privacy" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                        I agree to the{' '}
-                                        <span
-                                            onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
-                                            className="text-gray-900 font-bold hover:underline"
-                                        >
-                                            Privacy Policy
+                                <div className={`flex items-center p-3.5 rounded-xl border transition-all duration-300 ${
+                                    agreedToPrivacy 
+                                        ? 'border-lime-400 bg-lime-50/10 shadow-sm' 
+                                        : 'border-gray-200 hover:border-gray-300 bg-gray-50/30'
+                                }`}>
+                                    <label className="flex items-center space-x-3.5 w-full cursor-pointer group">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                id="privacy"
+                                                checked={agreedToPrivacy}
+                                                onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-lime-400 peer-focus-visible:ring-offset-2 ${
+                                                agreedToPrivacy 
+                                                    ? 'bg-lime-400 border-lime-400 shadow-md shadow-lime-400/30 scale-105' 
+                                                    : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:scale-105'
+                                            }`}>
+                                                {agreedToPrivacy && (
+                                                    <svg className="w-4 h-4 text-black stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="text-sm text-gray-700 select-none leading-relaxed">
+                                            I agree to the{' '}
+                                            <span
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLegalModalType('privacy'); }}
+                                                className="text-gray-900 font-bold hover:underline"
+                                            >
+                                                Privacy Policy
+                                            </span>
                                         </span>
                                     </label>
                                 </div>
