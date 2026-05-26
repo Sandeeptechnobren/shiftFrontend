@@ -1,7 +1,6 @@
 'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { login, getCountryList } from './service/allApi';
 import { extractToken } from './service/APIutils';
@@ -9,7 +8,7 @@ import Toast from './components/Toast';
 import { Loader2 } from 'lucide-react';
 import LegalModal from './components/LegalModal';
 
-export default function SignUpPage() {
+function SignUpPageContent() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -17,8 +16,22 @@ export default function SignUpPage() {
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
     const [showPassword, setShowPassword] = useState(false);
-    const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
+
+    const modalParam = searchParams.get('modal');
+    const legalModalType = (modalParam === 'terms-and-conditions' || modalParam === 'privacy-policy') ? modalParam : null;
+
+    const setLegalModalType = (type: 'terms-and-conditions' | 'privacy-policy' | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (type) {
+            params.set('modal', type);
+        } else {
+            params.delete('modal');
+        }
+        router.push(`${pathname}?${params.toString()}`);
+    };
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -128,43 +141,77 @@ export default function SignUpPage() {
                             </div>
 
                             {/* Terms and Privacy Policy */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 pt-2">
                                 {/* Terms Checkbox */}
-                                <div className="flex items-start">
-                                    <input
-                                        type="checkbox"
-                                        id="terms"
-                                        checked={agreedToTerms}
-                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                    />
-                                    <label htmlFor="terms" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                        I agree to the{' '}
-                                        <span
-                                            onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
-                                            className="text-gray-900 font-bold hover:underline"
-                                        >
-                                            Terms & Conditions
+                                <div className={`flex items-center p-3.5 rounded-xl border transition-all duration-300 ${agreedToTerms
+                                        ? 'border-lime-400 bg-lime-50/10 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-gray-50/30'
+                                    }`}>
+                                    <label className="flex items-center space-x-3.5 w-full cursor-pointer group">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                id="terms"
+                                                checked={agreedToTerms}
+                                                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-lime-400 peer-focus-visible:ring-offset-2 ${agreedToTerms
+                                                    ? 'bg-lime-400 border-lime-400 shadow-md shadow-lime-400/30 scale-105'
+                                                    : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:scale-105'
+                                                }`}>
+                                                {agreedToTerms && (
+                                                    <svg className="w-4 h-4 text-black stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="text-sm text-gray-700 select-none leading-relaxed">
+                                            I agree to the{' '}
+                                            <span
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLegalModalType('terms-and-conditions'); }}
+                                                className="text-gray-900 font-bold hover:underline"
+                                            >
+                                                Terms & Conditions
+                                            </span>
                                         </span>
                                     </label>
                                 </div>
 
                                 {/* Privacy Policy Checkbox */}
-                                <div className="flex items-start">
-                                    <input
-                                        type="checkbox"
-                                        id="privacy"
-                                        checked={agreedToPrivacy}
-                                        onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-                                        className="mt-1 w-5 h-5 rounded border-gray-300 text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                    />
-                                    <label htmlFor="privacy" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                        I agree to the{' '}
-                                        <span
-                                            onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
-                                            className="text-gray-900 font-bold hover:underline"
-                                        >
-                                            Privacy Policy
+                                <div className={`flex items-center p-3.5 rounded-xl border transition-all duration-300 ${agreedToPrivacy
+                                        ? 'border-lime-400 bg-lime-50/10 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300 bg-gray-50/30'
+                                    }`}>
+                                    <label className="flex items-center space-x-3.5 w-full cursor-pointer group">
+                                        <div className="relative flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                id="privacy"
+                                                checked={agreedToPrivacy}
+                                                onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-lime-400 peer-focus-visible:ring-offset-2 ${agreedToPrivacy
+                                                    ? 'bg-lime-400 border-lime-400 shadow-md shadow-lime-400/30 scale-105'
+                                                    : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:scale-105'
+                                                }`}>
+                                                {agreedToPrivacy && (
+                                                    <svg className="w-4 h-4 text-black stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="text-sm text-gray-700 select-none leading-relaxed">
+                                            I agree to the{' '}
+                                            <span
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLegalModalType('privacy-policy'); }}
+                                                className="text-gray-900 font-bold hover:underline"
+                                            >
+                                                Privacy Policy
+                                            </span>
                                         </span>
                                     </label>
                                 </div>
@@ -223,5 +270,17 @@ export default function SignUpPage() {
                 type={legalModalType}
             />
         </div>
+    );
+}
+
+export default function SignUpPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <Loader2 className="animate-spin text-lime-500" size={48} />
+            </div>
+        }>
+            <SignUpPageContent />
+        </Suspense>
     );
 }

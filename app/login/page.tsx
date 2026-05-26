@@ -7,31 +7,18 @@ import { extractToken, extractRole } from '../service/APIutils';
 // import { login, swiftLogin } from '../service/allApi';
 import { Loader2 } from 'lucide-react';
 import Toast from '../components/Toast';
-import LegalModal from '../components/LegalModal';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
-    const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-    const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setToast(null);
-
-        if (!agreedToTerms) {
-            setToast({ message: 'Please accept Terms & Conditions', type: 'error' });
-            return;
-        }
-        if (!agreedToPrivacy) {
-            setToast({ message: 'Please accept Privacy Policy', type: 'error' });
-            return;
-        }
 
         setLoading(true);
         try {
@@ -42,9 +29,7 @@ export default function LoginPage() {
             const response = await swiftLogin({
                 email,
                 password,
-                role: intendedRole,
-                term_condition_accepted: agreedToTerms ? 1 : 0,
-                privacy_policy_accepted: agreedToPrivacy ? 1 : 0
+                role: intendedRole
             });
 
             if (response && response.success !== false) {
@@ -148,47 +133,6 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                {/* Terms and Privacy Checkboxes */}
-                                <div className="space-y-4 pt-2">
-                                    <div className="flex items-start">
-                                        <input
-                                            type="checkbox"
-                                            id="terms"
-                                            checked={agreedToTerms}
-                                            onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                            className="mt-1 h-5 w-5 bg-white border-solid-[1px] border-gray-200 rounded-lg text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                        />
-                                        <label htmlFor="terms" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                            I agree to the{' '}
-                                            <span
-                                                onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
-                                                className="text-gray-900 font-bold hover:underline"
-                                            >
-                                                Terms & Conditions
-                                            </span>
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <input
-                                            type="checkbox"
-                                            id="privacy"
-                                            checked={agreedToPrivacy}
-                                            onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-                                            className="mt-1 h-5 w-5 bg-white border-solid-[1px] border-gray-200 rounded-lg text-lime-400 focus:ring-lime-400 cursor-pointer"
-                                        />
-                                        <label htmlFor="privacy" className="ml-3 text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                                            I agree to the{' '}
-                                            <span
-                                                onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
-                                                className="text-gray-900 font-bold hover:underline"
-                                            >
-                                                Privacy Policy
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
-
                                 {/* Login Button */}
                                 <button
                                     type="submit"
@@ -245,12 +189,6 @@ export default function LoginPage() {
                         onClose={() => setToast(null)}
                     />
                 )}
-
-                <LegalModal
-                    isOpen={legalModalType !== null}
-                    onClose={() => setLegalModalType(null)}
-                    type={legalModalType}
-                />
             </div>
         </>
     );

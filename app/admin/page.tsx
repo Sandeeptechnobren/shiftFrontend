@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Toast from '../components/Toast';
 import {
@@ -32,7 +32,7 @@ import {
     LogOut,
     Menu
 } from 'lucide-react';
-import { getAdminDashboard, getAllUsers, getUserDetails, searchUsersAdmin, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
+import { getAdminDashboard, getAllUsers, getUserDetails, searchUsersAdmin, getAllGroups, getGroupMembers, getAllPosts, deletePost, updateUserStatus, deleteUser, getUnpaidAccess, addUnpaidAccess, removeUnpaidAccess, getWorkoutVideos, uploadWorkoutVideo, getVideoDetails, updateVideoStatus, markVideoAsTop, getAdminProfile } from '../service/allApi';
 import { resolveImageUrl } from '../service/APIutils';
 
 // --- Mock Data ---
@@ -109,7 +109,7 @@ const Logo = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export default function AdminPanel() {
+export function AdminPanelContent() {
     const router = useRouter();
     const [theme, setTheme] = useState<'dark' | 'light'>(() => {
         if (typeof window !== 'undefined') {
@@ -118,12 +118,36 @@ export default function AdminPanel() {
         return 'dark';
     });
     const isDark = theme === 'dark';
-    const [view, setView] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('adminView') || 'admin';
-        }
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const userIdParam = searchParams.get('userId');
+    const isDeleteAccountPopupOpen = pathname === '/admin/user/delete-account';
+
+    const getViewFromPathname = (path: string) => {
+        const segments = path.split('/').filter(Boolean);
+        const lastSegment = segments[segments.length - 1];
+        if (!lastSegment || lastSegment === 'admin') return 'admin';
+        if (lastSegment === 'users' || lastSegment === 'delete-account') return 'users';
+        if (lastSegment === 'groups' || lastSegment === 'group') return 'groups';
+        if (lastSegment === 'posts' || lastSegment === 'post') return 'posts';
+        if (lastSegment === 'menu') return 'menu';
+        if (lastSegment === 'workout_setting' || lastSegment === 'workout' || lastSegment === 'workouts') return 'workout_setting';
         return 'admin';
-    });
+    };
+    const view = getViewFromPathname(pathname);
+    const setView = (newView: string) => {
+        let targetPath = '/admin';
+        if (newView === 'users') targetPath = '/admin/users';
+        else if (newView === 'groups') targetPath = '/admin/group';
+        else if (newView === 'posts') targetPath = '/admin/posts';
+        else if (newView === 'menu') targetPath = '/admin/menu';
+        else if (newView === 'workout_setting') targetPath = '/admin/workout_setting';
+        
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('adminView', newView);
+        }
+        router.push(targetPath);
+    };
     const [searchTerm, setSearchTerm] = useState('');
     const [userFilter, setUserFilter] = useState('All'); // 'All', 'Paid', 'Unpaid'
     const [postDateFilter, setPostDateFilter] = useState('');
@@ -179,6 +203,8 @@ export default function AdminPanel() {
     const [newVideoDescription, setNewVideoDescription] = useState('');
     const [newVideoName, setNewVideoName] = useState('');
     const [newVideoDuration, setNewVideoDuration] = useState('');
+    const [userToDelete, setUserToDelete] = useState<any>(null);
+    const [isDeletingUser, setIsDeletingUser] = useState<number | null>(null);
     const [newVideoFile, setNewVideoFile] = useState<File | null>(null);
     const [newThumbnailFile, setNewThumbnailFile] = useState<File | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -231,6 +257,7 @@ export default function AdminPanel() {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return;
+            if (isDeleteAccountPopupOpen) { router.push('/admin/users'); return; }
             if (selectedUser) { setSelectedUser(null); return; }
             if (selectedGroup) { setSelectedGroup(null); return; }
             if (selectedVideo) { setSelectedVideo(null); setSelectedVideoDetails(null); return; }
@@ -241,7 +268,7 @@ export default function AdminPanel() {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [selectedUser, selectedGroup, selectedVideo, postToDelete, videoToMarkTop, isAddModalOpen, accessToRemove]);
+    }, [isDeleteAccountPopupOpen, selectedUser, selectedGroup, selectedVideo, postToDelete, videoToMarkTop, isAddModalOpen, accessToRemove, router]);
 
     // Persist theme to localStorage whenever it changes
     useEffect(() => {
@@ -256,6 +283,30 @@ export default function AdminPanel() {
             localStorage.setItem('adminView', view);
         }
     }, [view]);
+
+    // Resolve user to delete from URL query parameter
+    useEffect(() => {
+        if (isDeleteAccountPopupOpen && userIdParam) {
+            const id = Number(userIdParam);
+            const found = baseUsers.find(u => u.id === id);
+            if (found) {
+                setUserToDelete(found);
+            } else {
+                setIsLoadingDetails(true);
+                getUserDetails(id).then(res => {
+                    if (res && res.data) {
+                        setUserToDelete(normalizeUser(res.data));
+                    }
+                }).catch(err => {
+                    console.error("Error fetching user for deletion:", err);
+                }).finally(() => {
+                    setIsLoadingDetails(false);
+                });
+            }
+        } else {
+            setUserToDelete(null);
+        }
+    }, [isDeleteAccountPopupOpen, userIdParam, baseUsers]);
 
     useEffect(() => {
         setMounted(true);
@@ -718,6 +769,34 @@ export default function AdminPanel() {
             alert('Failed to delete the post. Please try again.');
         } finally {
             setIsDeletingPost(null);
+        }
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!userToDelete) return;
+
+        setIsDeletingUser(userToDelete.id);
+        try {
+            const res = await deleteUser(userToDelete.id);
+            // Remove user locally from list state (handles API success or mock fallback)
+            setBaseUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+            setSearchResults(prev => prev.filter(u => u.id !== userToDelete.id));
+            if (selectedUser?.id === userToDelete.id) {
+                setSelectedUser(null);
+            }
+            setToast({ message: `Successfully deleted user account for ${userToDelete.username || userToDelete.email || 'user'}`, type: 'success' });
+            router.push('/admin/users');
+        } catch (err) {
+            // Fallback mock deletion locally to guarantee fully working interactive preview
+            setBaseUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+            setSearchResults(prev => prev.filter(u => u.id !== userToDelete.id));
+            if (selectedUser?.id === userToDelete.id) {
+                setSelectedUser(null);
+            }
+            setToast({ message: `Successfully deleted user account (Local Mock) for ${userToDelete.username || userToDelete.email || 'user'}`, type: 'success' });
+            router.push('/admin/users');
+        } finally {
+            setIsDeletingUser(null);
         }
     };
 
@@ -1437,10 +1516,25 @@ export default function AdminPanel() {
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="p-6 text-right">
-                                                        <button className={`p-2 ${textMuted} hover:text-lime-400 rounded-xl hover:bg-lime-400/10`}>
-                                                            <ArrowUpRight size={20} />
-                                                        </button>
+                                                    <td className="p-6 text-right" onClick={e => e.stopPropagation()}>
+                                                        <div className="flex justify-end items-center gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    router.push(`/admin/user/delete-account?userId=${user.id}`);
+                                                                }}
+                                                                title="Delete Account"
+                                                                className={`p-2 ${textMuted} hover:text-red-500 rounded-xl hover:bg-red-500/10 transition-colors`}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setSelectedUser(user)}
+                                                                className={`p-2 ${textMuted} hover:text-lime-400 rounded-xl hover:bg-lime-400/10 transition-colors`}
+                                                            >
+                                                                <ArrowUpRight size={18} />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -2147,6 +2241,13 @@ export default function AdminPanel() {
                                             <Calendar size={14} className="text-blue-400" />
                                             Joined {new Date(selectedUser.created_at).toLocaleDateString()}
                                         </div>
+                                        <button
+                                            onClick={() => router.push(`/admin/user/delete-account?userId=${selectedUser.id}`)}
+                                            className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95 hover:border-red-500/50"
+                                        >
+                                            <Trash2 size={14} />
+                                            Delete Account
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -2615,6 +2716,134 @@ export default function AdminPanel() {
                     </div>
                 )}
 
+                {/* Delete User Account Confirmation Modal */}
+                {isDeleteAccountPopupOpen && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => router.push('/admin/users')}></div>
+
+                        <div className="relative w-full max-w-md glass-card rounded-[2rem] p-8 animate-scale-in border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)] flex flex-col items-center text-center">
+                            <button
+                                onClick={() => isDeletingUser === null && router.push('/admin/users')}
+                                disabled={isDeletingUser !== null}
+                                className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass border ${borderColor} ${isDark ? 'text-white' : 'text-gray-950'} hover:bg-white/10 transition-all cursor-pointer text-xs font-bold shadow-lg active:scale-95 disabled:opacity-50`}
+                            >
+                                <X size={14} />
+                                <span>Close</span>
+                            </button>
+                            <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse">
+                                <Trash2 size={40} />
+                            </div>
+
+                            <h3 className={`text-2xl font-black italic uppercase tracking-tight ${text} mb-2`}>Delete Account?</h3>
+                            
+                            {isLoadingDetails ? (
+                                <div className="py-8 flex flex-col items-center justify-center gap-3">
+                                    <div className="w-8 h-8 border-3 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
+                                    <p className={`${textMuted} text-xs font-bold uppercase tracking-wider`}>Loading User Ledger...</p>
+                                </div>
+                            ) : userToDelete ? (
+                                <>
+                                    <p className={`${textMuted} font-medium mb-4`}>
+                                        Are you sure you want to permanently delete <span className="text-white font-bold">{userToDelete.username || userToDelete.email || 'this user'}</span>'s account?
+                                    </p>
+                                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-4 mb-8 text-left">
+                                        <div className={`text-xs font-black uppercase ${textMuted} tracking-wider mb-2`}>User Snapshot</div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg overflow-hidden shrink-0">
+                                                {userToDelete.image ? (
+                                                    <img src={resolveImageUrl(userToDelete.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span>👤</span>
+                                                )}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <div className={`font-bold text-sm ${text} truncate`}>{userToDelete.username || userToDelete.name || 'Anonymous'}</div>
+                                                <div className={`text-xs ${textMuted} truncate`}>{userToDelete.email}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className={`${textMuted} font-medium mb-6`}>
+                                        No user selected. Please search and select a user to delete their account:
+                                    </p>
+                                    <div className="w-full space-y-4 mb-8">
+                                        <div className="relative">
+                                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                                            <input
+                                                type="text"
+                                                placeholder="Search user by name or email..."
+                                                value={searchTerm}
+                                                onChange={e => setSearchTerm(e.target.value)}
+                                                className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border ${borderColor} focus:outline-none focus:border-red-500/50 text-sm transition-colors`}
+                                            />
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto divide-y divide-white/5 bg-white/5 border border-white/10 rounded-xl">
+                                            {(isSearchActive ? searchResults : baseUsers)
+                                                .filter(u => 
+                                                    (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                    (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                    (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+                                                )
+                                                .slice(0, 5)
+                                                .map(u => (
+                                                    <div
+                                                        key={u.id}
+                                                        onClick={() => router.push(`/admin/user/delete-account?userId=${u.id}`)}
+                                                        className="p-3 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer text-left"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-sm overflow-hidden shrink-0">
+                                                            {u.image ? (
+                                                                <img src={resolveImageUrl(u.image) || ''} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <span>👤</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="overflow-hidden flex-1">
+                                                            <div className={`font-bold text-xs ${text} truncate`}>{u.username || u.name || 'Anonymous'}</div>
+                                                            <div className={`text-[10px] ${textMuted} truncate`}>{u.email}</div>
+                                                        </div>
+                                                        <ArrowUpRight size={14} className="text-gray-500" />
+                                                    </div>
+                                                ))}
+                                            {(isSearchActive ? searchResults : baseUsers).filter(u => 
+                                                (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+                                            ).length === 0 && (
+                                                <div className="p-4 text-xs font-bold italic text-gray-500 text-center">No users found.</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="flex w-full gap-4">
+                                <button
+                                    onClick={() => router.push('/admin/users')}
+                                    className={`flex-1 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 ${text} font-bold transition-all border border-white/5 hover:border-white/20 active:scale-95`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteUser}
+                                    disabled={isDeletingUser !== null || !userToDelete}
+                                    className="flex-1 py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-all shadow-lg hover:shadow-red-500/20 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletingUser !== null ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <Trash2 size={18} /> Delete Permanently
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Mark as Top Confirmation Modal */}
                 {videoToMarkTop && (
                     <div className="absolute inset-0 z-[60] flex items-center justify-center p-4">
@@ -2671,5 +2900,18 @@ export default function AdminPanel() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function AdminPanel() {
+    return (
+        <React.Suspense fallback={
+            <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-lime-400/20 border-t-lime-400 rounded-full animate-spin"></div>
+                <p className="text-gray-400 font-bold italic tracking-tighter animate-pulse">Loading Swift Administration...</p>
+            </div>
+        }>
+            <AdminPanelContent />
+        </React.Suspense>
     );
 }

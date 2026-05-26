@@ -6,7 +6,7 @@ import { Loader2, X } from 'lucide-react';
 interface LegalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'terms' | 'privacy' | null;
+  type: 'terms' | 'privacy' | 'terms-and-conditions' | 'privacy-policy' | null;
 }
 
 export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
@@ -23,7 +23,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
       setError('');
       try {
         const url =
-          type === 'terms'
+          (type === 'terms' || type === 'terms-and-conditions')
             ? 'https://api.buildacademy.io/projects/shift_backend/public/api/termsCondition/list'
             : 'https://api.buildacademy.io/projects/shift_backend/public/api/privacyPolicy/list';
 
@@ -57,9 +57,9 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
           const item = Array.isArray(items) ? items[0] : items;
 
           if (item) {
-            if (type === 'terms' && item.terms_and_condition) {
+            if ((type === 'terms' || type === 'terms-and-conditions') && item.terms_and_condition) {
               extractedContent = item.terms_and_condition;
-            } else if (type === 'privacy' && item.privacy_policy) {
+            } else if ((type === 'privacy' || type === 'privacy-policy') && item.privacy_policy) {
               extractedContent = item.privacy_policy;
             } else if (item.content) {
               extractedContent = item.content;
@@ -107,7 +107,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
   if (!isOpen) return null;
 
-  const title = type === 'terms' ? 'Terms & Conditions' : 'Privacy Policy';
+  const title = (type === 'terms' || type === 'terms-and-conditions') ? 'Terms & Conditions' : 'Privacy Policy';
 
   return (
     <div
@@ -122,7 +122,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
         <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-lime-100 text-lime-600 rounded-xl">
-              {type === 'terms' ? (
+              {(type === 'terms' || type === 'terms-and-conditions') ? (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               ) : (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Loader2, Camera } from 'lucide-react';
 import { createAccount, getCountryList } from '../service/allApi';
 import { extractToken } from '../service/APIutils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Toast from '../components/Toast';
 import LegalModal from '../components/LegalModal';
 
@@ -16,7 +16,7 @@ interface Country {
 
 
 
-export default function SignUpForm() {
+function SignUpFormContent() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,8 +30,21 @@ export default function SignUpForm() {
   // Modal dropdown states
   const [openModal, setOpenModal] = useState<'gender' | 'age_range' | 'country' | null>(null);
 
-  // Legal Modal states
-  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
+  // Legal Modal states from query params
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const modalParam = searchParams.get('modal');
+  const legalModalType = (modalParam === 'terms-and-conditions' || modalParam === 'privacy-policy') ? modalParam : null;
+
+  const setLegalModalType = (type: 'terms-and-conditions' | 'privacy-policy' | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (type) {
+      params.set('modal', type);
+    } else {
+      params.delete('modal');
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const [formData, setFormData] = useState({
     username: '',
@@ -403,7 +416,7 @@ export default function SignUpForm() {
                   <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed cursor-pointer select-none">
                     I agree to the{' '}
                     <span
-                      onClick={(e) => { e.preventDefault(); setLegalModalType('terms'); }}
+                      onClick={(e) => { e.preventDefault(); setLegalModalType('terms-and-conditions'); }}
                       className="text-gray-900 font-bold hover:underline"
                     >
                       Terms & Conditions
@@ -423,7 +436,7 @@ export default function SignUpForm() {
                   <label htmlFor="privacy" className="text-sm text-gray-600 leading-relaxed cursor-pointer select-none">
                     I agree to the{' '}
                     <span
-                      onClick={(e) => { e.preventDefault(); setLegalModalType('privacy'); }}
+                      onClick={(e) => { e.preventDefault(); setLegalModalType('privacy-policy'); }}
                       className="text-gray-900 font-bold hover:underline"
                     >
                       Privacy Policy
@@ -509,5 +522,17 @@ export default function SignUpForm() {
         type={legalModalType}
       />
     </div>
+  );
+}
+
+export default function SignUpForm() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="animate-spin text-lime-500" size={48} />
+      </div>
+    }>
+      <SignUpFormContent />
+    </Suspense>
   );
 }
