@@ -233,6 +233,15 @@ export const updateUserStatus = async (userId: number | string, isActive: 0 | 1)
     }
 };
 
+export const deleteUser = async (userId: number | string) => {
+    try {
+        const res = await API.delete(`/api/admin/users/${userId}`);
+        return res.data;
+    } catch (error: unknown) {
+        return handleError(error);
+    }
+};
+
 export const getUnpaidAccess = async () => {
     try {
         const res = await API.get('/api/admin/unpaid-access');
