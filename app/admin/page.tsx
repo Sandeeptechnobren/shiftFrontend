@@ -1474,7 +1474,7 @@ export function AdminPanelContent() {
                                                     </td>
                                                     <td className="p-6" onClick={e => e.stopPropagation()}>
                                                         {(() => {
-                                                            const isActive = user.account_is_active === 1 || user.account_is_active === true || user.is_active;
+                                                            const isActive = user.account_is_active === 1 || user.account_is_active === true;
                                                             return (
                                                                 <div className="relative flex items-center bg-gray-900/80 rounded-xl border border-white/6 p-0.5 w-fit shadow-inner">
                                                                     {/* Sliding highlight */}
@@ -2221,7 +2221,7 @@ export function AdminPanelContent() {
                                     <div className="flex flex-col items-center md:items-start">
                                         <div className="flex items-center gap-3">
                                             <h2 className="text-4xl font-black italic tracking-tight">{selectedUser.username || selectedUser.name || 'Anonymous User'}</h2>
-                                            <div className={`w-3 h-3 rounded-full ${selectedUser.is_active ? 'bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.6)]' : 'bg-gray-600'}`}></div>
+                                            <div className={`w-3 h-3 rounded-full ${(selectedUser.account_is_active === 1 || selectedUser.account_is_active === true) ? 'bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.6)]' : 'bg-gray-600'}`}></div>
                                         </div>
                                         <div className="text-gray-400 text-sm mt-1 flex items-center gap-2 font-medium">
                                             <Mail size={14} /> {selectedUser.email}
