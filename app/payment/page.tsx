@@ -20,8 +20,8 @@ function PremiumClubCardInner() {
     setLoading(true);
 
     try {
-      // Get email stored during signup
-      const email = localStorage.getItem("verificationEmail");
+      // Get email stored during signup or login
+      const email = localStorage.getItem("userEmail") || localStorage.getItem("verificationEmail");
 
       if (!email) {
         setError("User email not found. Please sign up again.");
